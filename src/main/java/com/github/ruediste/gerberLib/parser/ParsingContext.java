@@ -9,6 +9,8 @@ public class ParsingContext<T extends ParsingState<T>> {
 	public String input;
 	public ParseException latestException;
 
+	public int backtrackingLimit = -1;
+
 	public ParsingContext(String input, T initialState) {
 		this.input = input;
 		this.state = initialState;
@@ -51,6 +53,8 @@ public class ParsingContext<T extends ParsingState<T>> {
 			latestException = new ParseException(expected, pos.copy(), input);
 			throw latestException;
 		}
+		if (pos.isBefore(latestException.pos))
+			throw latestException;
 		if (!expected.stream().allMatch(latestException.expected::contains)) {
 			Set<String> set = new HashSet<String>(latestException.expected);
 			set.addAll(expected);
@@ -70,5 +74,9 @@ public class ParsingContext<T extends ParsingState<T>> {
 
 	public InputPosition copyPos() {
 		return state.pos.copy();
+	}
+
+	public void limitBacktracking() {
+		backtrackingLimit = state.pos.inputIndex;
 	}
 }

@@ -2,6 +2,9 @@ package com.github.ruediste.gerberLib.parser;
 
 import java.util.List;
 
+import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroBody;
+import com.github.ruediste.gerberLib.read.QuadrantMode;
+
 public class GerberParsingEventHandler {
 
 	public void comment(InputPosition pos, String string) {
@@ -28,7 +31,7 @@ public class GerberParsingEventHandler {
 	public void setCurrentAperture(InputPosition pos, String aperture) {
 	}
 
-	public void interpolateOperation(InputPosition pos, String x, String y, List<String> ij) {
+	public void interpolateOperation(InputPosition pos, String x, String y, String i, String j) {
 
 	}
 
@@ -40,11 +43,30 @@ public class GerberParsingEventHandler {
 
 	}
 
-	public void linearIntrepolation(InputPosition pos) {
+	public void setInterpolationMode(InputPosition pos, InterpolationMode linear) {
 
 	}
 
 	public void endOfFile(InputPosition pos) {
+
+	}
+
+	public void unknownStatement(InputPosition pos, String text) {
+	}
+
+	public void apertureMacro(InputPosition pos, String name, MacroBody body) {
+
+	}
+
+	public void beginRegion(InputPosition pos) {
+
+	}
+
+	public void endRegion(InputPosition pos) {
+
+	}
+
+	public void setQuadrantMode(InputPosition pos, QuadrantMode mode) {
 
 	}
 

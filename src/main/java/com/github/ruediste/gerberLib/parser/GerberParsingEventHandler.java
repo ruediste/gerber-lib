@@ -24,11 +24,11 @@ public class GerberParsingEventHandler {
 
 	}
 
-	public void apertureDefinition(InputPosition pos, String number, String template, List<String> parameters) {
+	public void apertureDefinition(InputPosition pos, int number, String template, List<String> parameters) {
 
 	}
 
-	public void setCurrentAperture(InputPosition pos, String aperture) {
+	public void setCurrentAperture(InputPosition pos, int aperture) {
 	}
 
 	public void interpolateOperation(InputPosition pos, String x, String y, String i, String j) {
@@ -67,6 +67,14 @@ public class GerberParsingEventHandler {
 	}
 
 	public void setQuadrantMode(InputPosition pos, QuadrantMode mode) {
+
+	}
+
+	public void beginBlockAperture(int nr) {
+
+	}
+
+	public void endBlockAperture(int nr) {
 
 	}
 

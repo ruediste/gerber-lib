@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import com.github.ruediste.gerberLib.GerberBoundingBoxCollector;
 import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.rasterizer.GerberRasterizer;
-import com.github.ruediste.gerberLib.read.GerberReadAdapter;
+import com.github.ruediste.gerberLib.read.GerberReadGraphicsAdapter;
 import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricPrimitiveAdapter;
 
 public class DrawSamplesTest {
@@ -27,7 +27,7 @@ public class DrawSamplesTest {
 			String gbrContent = TestUtils.readResource("/examples20201015/" + fileName);
 
 			var boundsCollector = new GerberBoundingBoxCollector();
-			new GerberParser(new GerberReadAdapter(warningCollector,
+			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, boundsCollector)), gbrContent).file();
 			Rectangle2D bounds = boundsCollector.getBounds();
 
@@ -35,7 +35,7 @@ public class DrawSamplesTest {
 
 			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, bounds.getWidth() + 2,
 					bounds.getHeight() + 2, 1 - bounds.getMinX(), 1 - bounds.getMinY(), 100);
-			new GerberParser(new GerberReadAdapter(warningCollector,
+			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)), gbrContent).file();
 
 			if (!warningCollector.warnings.isEmpty()) {

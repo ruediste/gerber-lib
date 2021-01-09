@@ -14,7 +14,7 @@ import org.mockito.InOrder;
 
 import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.rasterizer.GerberRasterizer;
-import com.github.ruediste.gerberLib.read.GerberReadAdapter;
+import com.github.ruediste.gerberLib.read.GerberReadGraphicsAdapter;
 import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricPrimitiveAdapter;
 
 public class TwoSquareBoxesTest {
@@ -31,8 +31,8 @@ public class TwoSquareBoxesTest {
 		o.verify(handler).unit(any(), eq("MM"));
 		o.verify(handler).fileAttribute(any(), eq(".Part"), eq(List.of("Other", "example")));
 		o.verify(handler).loadPolarity(any(), eq("D"));
-		o.verify(handler).apertureDefinition(any(), eq("10"), eq("C"), eq(List.of("0.010")));
-		o.verify(handler).setCurrentAperture(any(), eq("10"));
+		o.verify(handler).apertureDefinition(any(), eq(10), eq("C"), eq(List.of("0.010")));
+		o.verify(handler).setCurrentAperture(any(), eq(10));
 		o.verify(handler).moveOperation(any(), eq("0"), eq("0"));
 		o.verify(handler).setInterpolationMode(any(), eq(InterpolationMode.LINEAR));
 		o.verify(handler).interpolateOperation(any(), eq("5000000"), eq("0"), eq(null), eq(null));
@@ -55,7 +55,7 @@ public class TwoSquareBoxesTest {
 		WarningCollector warningCollector = new WarningCollector();
 		GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, 15, 7, 1, 1, 100);
 		GerberParser parser = new GerberParser(
-				new GerberReadAdapter(warningCollector,
+				new GerberReadGraphicsAdapter(warningCollector,
 						new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)),
 				TestUtils.readResource("/examples20201015/2-13-1_Two_square_boxes.gbr"));
 		parser.file();

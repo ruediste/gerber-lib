@@ -17,7 +17,23 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 
 	public void file() {
 		zeroOrMore(this::statement);
-		eof();
+		endOfFile();
+	}
+
+	void statement() {
+		eatNewLines();
+		choice(this::single_statement, this::compound_statement);
+
+	}
+
+	void single_statement() {
+		choice(this::operation, this::interpolation_state_command, this::setCurrentAperture_Dnn, this::comment_G04,
+				this::attribute_command, this::apertureDefinition_AD, this::apertureMacro_AM, this::coordinate_command,
+				this::transformation_state_command);
+	}
+
+	void compound_statement() {
+		choice(this::region_statement, this::SR_statement, this::AB_statement, this::unknownStatement);
 	}
 
 	private void endOfFile() {
@@ -27,39 +43,37 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 		handler.endOfFile(pos);
 	}
 
-	void statement() {
-		eatNewLines();
-		choice(this::operation, this::interpolation_state_command, this::setCurrentAperture_Dnn, this::comment_G04,
-				this::attribute_command, this::apertureDefinition_AD, this::apertureMacro_AM, this::coordinate_command,
-				this::transformation_state_command, this::region_statement, this::SR_statement, this::AB_statement,
-				this::endOfFile, this::unknownStatement);
-
-	}
-
 	void unknownStatement() {
 		var pos = ctx.copyPos();
+		// negative look ahead
+		not("M02*", () -> next("M02"));
 		var text = join(sequence(() -> join(zeroOrMore(() -> not("*"))), () -> next("*")));
 		optional(() -> choice(() -> nextRaw("%\n"), () -> nextRaw("%\r\n")));
 		handler.unknownStatement(pos, text);
 	}
 
-	void AB_statement() {
-		ctx.throwException("todo: AB");
+	void in_block_statement() {
+		choice(this::single_statement, this::region_statement, this::AB_statement);
+	}
 
+	void AB_statement() {
+		next("%AB");
+		next("D");
+		var nr = aperture_nr();
+		next("*%");
+		ctx.limitBacktracking();
+		handler.beginBlockAperture(nr);
+		zeroOrMore(this::in_block_statement);
+		ctx.limitBacktracking();
+		next("%AB*%");
+		handler.endBlockAperture(nr);
 	}
 
 	void SR_statement() {
 		ctx.throwException("todo: SR");
-
 	}
 
 	void region_statement() {
-//		next("G36*");
-//		oneOrMore(() -> {
-//			moveOperation_D02();
-//			zeroOrMore(() -> choice(this::interpolateOperation_D01, this::interpolation_state_command));
-//		});
-//		next("G37*");
 		var pos = ctx.copyPos();
 		choice(() -> {
 			next("G36*");
@@ -106,10 +120,10 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 		next("%FSLAX");
 		ctx.limitBacktracking();
 		fmt.xIntegerDigits = Integer.parseInt(any("123456789"));
-		fmt.xDecimalDigits = Integer.parseInt(any("56"));
+		fmt.xDecimalDigits = Integer.parseInt(any("123456789"));
 		next("Y");
 		fmt.yIntegerDigits = Integer.parseInt(any("123456789"));
-		fmt.yDecimalDigits = Integer.parseInt(any("56"));
+		fmt.yDecimalDigits = Integer.parseInt(any("123456789"));
 		next("*%");
 		handler.coordinateFormatSpecification(pos, fmt);
 	}
@@ -155,7 +169,7 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 		handler.apertureDefinition(pos, number, template, parameters);
 	}
 
-	String aperture_nr() {
+	int aperture_nr() {
 		// /[1-9][0-9]+/;
 		var pos = ctx.copyPos();
 		var value = join(oneOrMore(() -> any(isDigit())));
@@ -167,7 +181,7 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 		}
 		if (valueParsed < 10)
 			ctx.throwException("value>=10", pos);
-		return value;
+		return valueParsed;
 	}
 
 	void attribute_command() {

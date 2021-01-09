@@ -7,7 +7,7 @@ import com.github.ruediste.gerberLib.linAlg.CoordinateVector;
 import com.github.ruediste.gerberLib.parser.GerberCoordinateFormatSpecification;
 import com.github.ruediste.gerberLib.parser.InterpolationMode;
 
-public class GraphicsState {
+public class GerberGraphicsState {
 	public GerberCoordinateFormatSpecification coordinateFormat;
 	public CoordinateLengthUnit unit;
 	public CoordinateLength currentX;

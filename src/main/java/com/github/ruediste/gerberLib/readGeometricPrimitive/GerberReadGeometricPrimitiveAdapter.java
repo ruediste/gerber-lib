@@ -21,15 +21,15 @@ import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroVariableD
 import com.github.ruediste.gerberLib.parser.InputPosition;
 import com.github.ruediste.gerberLib.parser.InterpolationMode;
 import com.github.ruediste.gerberLib.read.ApertureDefinition;
-import com.github.ruediste.gerberLib.read.GerberReadEventHandler;
-import com.github.ruediste.gerberLib.read.GraphicsState;
+import com.github.ruediste.gerberLib.read.GerberReadGraphicsEventHandler;
+import com.github.ruediste.gerberLib.read.GerberGraphicsState;
 import com.github.ruediste.gerberLib.read.InterpolateParameter;
 import com.github.ruediste.gerberLib.read.MacroExpressionEvaluator;
 import com.github.ruediste.gerberLib.read.QuadrantMode;
 import com.github.ruediste.gerberLib.read.StandardApertureTemplate;
 import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricPrimitiveEventHandler.Exposure;
 
-public class GerberReadGeometricPrimitiveAdapter extends GerberReadEventHandler {
+public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEventHandler {
 	private GerberReadGeometricPrimitiveEventHandler handler;
 	private WarningCollector warningCollector;
 
@@ -181,7 +181,7 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadEventHandler 
 	}
 
 	@Override
-	public void flash(InputPosition pos, GraphicsState state) {
+	public void flash(InputPosition pos, GerberGraphicsState state) {
 
 		ApertureDefinition aperture = state.currentAperture;
 		if (aperture == null) {
@@ -595,12 +595,12 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadEventHandler 
 	}
 
 	@Override
-	public void regionBegin(InputPosition pos, GraphicsState state) {
+	public void regionBegin(InputPosition pos, GerberGraphicsState state) {
 		handler.beginObject(pos, state.polarity);
 	}
 
 	@Override
-	public void regionStartContour(InputPosition pos, GraphicsState state) {
+	public void regionStartContour(InputPosition pos, GerberGraphicsState state) {
 		handler.beginPath(pos, Exposure.ON);
 	}
 
@@ -648,12 +648,12 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadEventHandler 
 	}
 
 	@Override
-	public void regionEndContour(InputPosition pos, GraphicsState state) {
+	public void regionEndContour(InputPosition pos, GerberGraphicsState state) {
 		handler.endPath(pos, Exposure.ON);
 	}
 
 	@Override
-	public void regionEnd(InputPosition pos, GraphicsState state) {
+	public void regionEnd(InputPosition pos, GerberGraphicsState state) {
 		handler.endObject(pos, state.polarity);
 	}
 

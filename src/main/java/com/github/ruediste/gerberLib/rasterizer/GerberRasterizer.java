@@ -2,6 +2,7 @@ package com.github.ruediste.gerberLib.rasterizer;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Area;
 import java.awt.geom.Line2D;
@@ -41,6 +42,9 @@ public class GerberRasterizer implements GerberReadGeometricPrimitiveEventHandle
 		g = image.createGraphics();
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, image.getWidth(), image.getHeight());
+		g.transform(AffineTransform.getTranslateInstance(0, image.getHeight()));
+		g.transform(AffineTransform.getScaleInstance(pointsPerMM, -pointsPerMM));
+		g.transform(AffineTransform.getTranslateInstance(offsetXMM, offsetYMM));
 	}
 
 	Area currentArea;
@@ -60,18 +64,19 @@ public class GerberRasterizer implements GerberReadGeometricPrimitiveEventHandle
 	public void addLine(InputPosition pos, CoordinatePoint p1, CoordinatePoint p2) {
 //		System.out.println(pos + ": line " + p1 + "->" + p2);
 //		System.out.println(pos + ": line " + toImage(p1) + "->" + toImage(p2));
-		currentPath.append(new Line2D.Double(toImage(p1), toImage(p2)), true);
+		currentPath.append(new Line2D.Double(new Point2D.Double(value(p1.x), value(p1.y)),
+				new Point2D.Double(value(p2.x), value(p2.y))), true);
 	}
 
 	@Override
 	public void addArc(InputPosition pos, CoordinatePoint p, CoordinateLength w, CoordinateLength h, double angSt,
 			double angExt) {
 //		System.out.println(pos + ": arc " + p + "(" + w + "," + h + ")[" + angSt + "," + angExt + "]");
-		double iH = toImage(h);
+		double iH = value(h);
 //		System.out.println(pos + ": arc (" + toImageX(p.x) + "," + (toImageY(p.y) - iH) + ")(" + toImage(w) + "," + iH
 //				+ ")[" + angSt + "," + angExt + "]");
-		currentPath.append(
-				new Arc2D.Double(toImageX(p.x), toImageY(p.y) - iH, toImage(w), iH, angSt, angExt, Arc2D.OPEN), true);
+		currentPath.append(new Arc2D.Double(value(p.x), value(p.y) - iH, value(w), iH, angSt, angExt, Arc2D.OPEN),
+				true);
 	}
 
 	@Override
@@ -109,20 +114,8 @@ public class GerberRasterizer implements GerberReadGeometricPrimitiveEventHandle
 		}
 	}
 
-	private Point2D toImage(CoordinatePoint v) {
-		return new Point2D.Double(toImageX(v.x), toImageY(v.y));
-	}
-
-	private double toImageX(CoordinateLength c) {
-		return toImage(c) + offsetXMM * pointsPerMM;
-	}
-
-	private double toImageY(CoordinateLength c) {
-		return image.getHeight() - toImage(c) - offsetYMM * pointsPerMM;
-	}
-
-	private double toImage(CoordinateLength c) {
-		return c.getValue(CoordinateLengthUnit.MM) * pointsPerMM;
+	private double value(CoordinateLength c) {
+		return c.getValue(CoordinateLengthUnit.MM);
 	}
 
 }

@@ -334,4 +334,18 @@ public class ParserBase<S extends ParsingState<S>> {
 		// /[1-9][0-9]*/;
 		return join(sequence(() -> any(isDigitNonZero()), () -> join(zeroOrMore(() -> any(isDigit())))));
 	}
+
+	protected void not(String description, Runnable notExpected) {
+		S start = ctx.state.copy();
+		boolean matched = false;
+		try {
+			notExpected.run();
+			matched = true;
+		} catch (ParseException e) {
+			// swallow, reset to start
+			ctx.state = start;
+		}
+		if (matched)
+			ctx.throwException(description);
+	}
 }

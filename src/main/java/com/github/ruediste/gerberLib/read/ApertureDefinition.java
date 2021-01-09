@@ -10,4 +10,5 @@ public class ApertureDefinition {
 	public ApertureTemplate template;
 	public List<CoordinateLength> parameters = new ArrayList<CoordinateLength>();
 	public int nr;
+	List<Runnable> handlerCalls;
 }

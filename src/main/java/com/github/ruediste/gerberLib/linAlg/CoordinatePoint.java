@@ -2,56 +2,52 @@ package com.github.ruediste.gerberLib.linAlg;
 
 public class CoordinatePoint {
 
-	public final CoordinateLength x;
-	public final CoordinateLength y;
+	public final double x;
+	public final double y;
 
-	public static CoordinatePoint of(CoordinateLength x, CoordinateLength y) {
+	public static CoordinatePoint of(double x, double y) {
 		return new CoordinatePoint(x, y);
 	}
 
-	public static CoordinatePoint of(CoordinateLengthUnit unit, double x, double y) {
-		return of(CoordinateLength.of(unit, x), CoordinateLength.of(unit, y));
-	}
-
-	public CoordinatePoint(CoordinateLength x, CoordinateLength y) {
+	public CoordinatePoint(double x, double y) {
 		this.x = x;
 		this.y = y;
 	}
 
 	public CoordinateVector vectorTo(CoordinatePoint target) {
-		return CoordinateVector.of(target.x.minus(x), target.y.minus(y));
+		return CoordinateVector.of(target.x - x, target.y - y);
 	}
 
 	public CoordinatePoint plus(CoordinateVector v) {
-		return of(x.plus(v.x), y.plus(v.y));
+		return of(x + v.x, y + v.y);
 	}
 
 	public CoordinatePoint minus(CoordinateVector v) {
-		return of(x.minus(v.x), y.minus(v.y));
+		return of(x - v.x, y - v.y);
 	}
 
-	public CoordinatePoint plus(CoordinateLength x, CoordinateLength y) {
-		return of(this.x.plus(x), this.y.plus(y));
+	public CoordinatePoint plus(double x, double y) {
+		return of(this.x + x, this.y + y);
 	}
 
-	public CoordinatePoint plusX(CoordinateLength x) {
-		return of(this.x.plus(x), this.y);
+	public CoordinatePoint plusX(double x) {
+		return of(this.x + x, this.y);
 	}
 
-	public CoordinatePoint plusY(CoordinateLength y) {
-		return of(this.x, this.y.plus(y));
+	public CoordinatePoint plusY(double y) {
+		return of(this.x, this.y + y);
 	}
 
-	public CoordinatePoint minus(CoordinateLength x, CoordinateLength y) {
-		return of(this.x.minus(x), this.y.minus(y));
+	public CoordinatePoint minus(double x, double y) {
+		return of(this.x - x, this.y - y);
 	}
 
-	public CoordinatePoint minusX(CoordinateLength x) {
-		return of(this.x.minus(x), this.y);
+	public CoordinatePoint minusX(double x) {
+		return of(this.x - x, this.y);
 	}
 
-	public CoordinatePoint minusY(CoordinateLength y) {
-		return of(this.x, this.y.minus(y));
+	public CoordinatePoint minusY(double y) {
+		return of(this.x, this.y - y);
 	}
 
 	public CoordinatePoint projectPointToLine(CoordinatePoint point, CoordinateVector direction) {
@@ -68,18 +64,15 @@ public class CoordinatePoint {
 	 */
 	public CoordinatePoint rotate(double angle) {
 		double a = angle / 180 * Math.PI;
-		CoordinateLengthUnit unit = x.getUnit();
-		double x = this.x.getValue(unit);
-		double y = this.y.getValue(unit);
-		return of(unit, Math.cos(a) * x - Math.sin(a) * y, Math.sin(a) * x + Math.cos(a) * y);
+		return of(Math.cos(a) * x - Math.sin(a) * y, Math.sin(a) * x + Math.cos(a) * y);
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((x == null) ? 0 : x.hashCode());
-		result = prime * result + ((y == null) ? 0 : y.hashCode());
+		result = prime * result + Double.hashCode(x);
+		result = prime * result + Double.hashCode(y);
 		return result;
 	}
 
@@ -92,17 +85,7 @@ public class CoordinatePoint {
 		if (getClass() != obj.getClass())
 			return false;
 		CoordinatePoint other = (CoordinatePoint) obj;
-		if (x == null) {
-			if (other.x != null)
-				return false;
-		} else if (!x.equals(other.x))
-			return false;
-		if (y == null) {
-			if (other.y != null)
-				return false;
-		} else if (!y.equals(other.y))
-			return false;
-		return true;
+		return x == other.x && y == other.y;
 	}
 
 }

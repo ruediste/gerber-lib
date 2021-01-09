@@ -7,8 +7,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.parser.InputPosition;
 import com.github.ruediste.gerberLib.read.Polarity;
@@ -35,18 +33,13 @@ public class GerberBoundingBoxCollector implements GerberReadGeometricPrimitiveE
 	}
 
 	private Point2D p(CoordinatePoint p) {
-		return new Point2D.Double(l(p.x), l(p.y));
-	}
-
-	private double l(CoordinateLength x) {
-		return x.getValue(CoordinateLengthUnit.MM);
+		return new Point2D.Double(p.x, p.y);
 	}
 
 	@Override
-	public void addArc(InputPosition pos, CoordinatePoint point, CoordinateLength w, CoordinateLength h, double angSt,
-			double angExt) {
+	public void addArc(InputPosition pos, CoordinatePoint point, double w, double h, double angSt, double angExt) {
 		var p = p(point);
-		currentPath.append(new Arc2D.Double(p.getX(), p.getY(), l(w), l(h), angSt, angExt, Arc2D.OPEN), true);
+		currentPath.append(new Arc2D.Double(p.getX(), p.getY(), w, h, angSt, angExt, Arc2D.OPEN), true);
 	}
 
 	@Override

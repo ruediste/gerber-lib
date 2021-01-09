@@ -15,8 +15,6 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.parser.InputPosition;
 import com.github.ruediste.gerberLib.read.Polarity;
@@ -64,19 +62,16 @@ public class GerberRasterizer implements GerberReadGeometricPrimitiveEventHandle
 	public void addLine(InputPosition pos, CoordinatePoint p1, CoordinatePoint p2) {
 //		System.out.println(pos + ": line " + p1 + "->" + p2);
 //		System.out.println(pos + ": line " + toImage(p1) + "->" + toImage(p2));
-		currentPath.append(new Line2D.Double(new Point2D.Double(value(p1.x), value(p1.y)),
-				new Point2D.Double(value(p2.x), value(p2.y))), true);
+		currentPath.append(new Line2D.Double(new Point2D.Double(p1.x, p1.y), new Point2D.Double(p2.x, p2.y)), true);
 	}
 
 	@Override
-	public void addArc(InputPosition pos, CoordinatePoint p, CoordinateLength w, CoordinateLength h, double angSt,
-			double angExt) {
+	public void addArc(InputPosition pos, CoordinatePoint p, double w, double h, double angSt, double angExt) {
 //		System.out.println(pos + ": arc " + p + "(" + w + "," + h + ")[" + angSt + "," + angExt + "]");
-		double iH = value(h);
+		double iH = h;
 //		System.out.println(pos + ": arc (" + toImageX(p.x) + "," + (toImageY(p.y) - iH) + ")(" + toImage(w) + "," + iH
 //				+ ")[" + angSt + "," + angExt + "]");
-		currentPath.append(new Arc2D.Double(value(p.x), value(p.y) - iH, value(w), iH, angSt, angExt, Arc2D.OPEN),
-				true);
+		currentPath.append(new Arc2D.Double(p.x, p.y - iH, w, iH, angSt, angExt, Arc2D.OPEN), true);
 	}
 
 	@Override
@@ -112,10 +107,6 @@ public class GerberRasterizer implements GerberReadGeometricPrimitiveEventHandle
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private double value(CoordinateLength c) {
-		return c.getValue(CoordinateLengthUnit.MM);
 	}
 
 }

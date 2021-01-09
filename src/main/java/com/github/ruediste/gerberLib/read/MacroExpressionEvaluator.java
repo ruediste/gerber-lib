@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpression;
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpressionBinaryOperation;
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpressionUnaryMinus;
@@ -14,61 +12,59 @@ import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpressio
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpressionVisitor;
 
 public class MacroExpressionEvaluator {
-	Map<Integer, CoordinateLength> variableValues = new HashMap<>();
-	private CoordinateLengthUnit unit;
+	Map<Integer, Double> variableValues = new HashMap<>();
 	private WarningCollector warningCollector;
 
-	public MacroExpressionEvaluator(CoordinateLengthUnit unit, WarningCollector warningCollector) {
-		this.unit = unit;
+	public MacroExpressionEvaluator(WarningCollector warningCollector) {
 		this.warningCollector = warningCollector;
 
 	}
 
-	public void set(int variableNr, CoordinateLength value) {
+	public void set(int variableNr, double value) {
 		variableValues.put(variableNr, value);
 	}
 
-	public CoordinateLength evaluate(MacroExpression expr) {
+	public Double evaluate(MacroExpression expr) {
 		if (expr == null)
 			return null;
-		return expr.accept(new MacroExpressionVisitor<CoordinateLength>() {
+		return expr.accept(new MacroExpressionVisitor<Double>() {
 
 			@Override
-			public CoordinateLength visit(MacroExpressionValue value) {
-				return CoordinateLength.of(unit, Double.parseDouble(value.value));
+			public Double visit(MacroExpressionValue value) {
+				return Double.parseDouble(value.value);
 			}
 
 			@Override
-			public CoordinateLength visit(MacroExpressionBinaryOperation binaryOperation) {
+			public Double visit(MacroExpressionBinaryOperation binaryOperation) {
 				var left = evaluate(binaryOperation.left);
 				var right = evaluate(binaryOperation.right);
 				if (left == null || right == null)
 					return null;
 				switch (binaryOperation.operation) {
 				case DIVIDE:
-					return CoordinateLength.of(unit, left.getValue(unit) / right.getValue(unit));
+					return left / right;
 				case MINUS:
-					return left.minus(right);
+					return left - right;
 				case MULTIPY:
-					return CoordinateLength.of(unit, left.getValue(unit) * right.getValue(unit));
+					return left * right;
 				case PLUS:
-					return left.plus(right);
+					return left + right;
 				default:
 					throw new UnsupportedOperationException();
 				}
 			}
 
 			@Override
-			public CoordinateLength visit(MacroExpressionUnaryMinus unaryMinus) {
-				CoordinateLength value = evaluate(unaryMinus.exp);
+			public Double visit(MacroExpressionUnaryMinus unaryMinus) {
+				Double value = evaluate(unaryMinus.exp);
 				if (value == null)
 					return null;
-				return value.scale(-1);
+				return -value;
 			}
 
 			@Override
-			public CoordinateLength visit(MacroExpressionVariable variable) {
-				CoordinateLength result = variableValues.get(variable.variableNr);
+			public Double visit(MacroExpressionVariable variable) {
+				Double result = variableValues.get(variable.variableNr);
 				if (result == null) {
 					warningCollector.add(variable.pos, "Variable $" + variable.variableNr + " not defined");
 				}

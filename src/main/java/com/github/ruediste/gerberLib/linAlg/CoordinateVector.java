@@ -2,56 +2,44 @@ package com.github.ruediste.gerberLib.linAlg;
 
 public class CoordinateVector {
 
-	public static final CoordinateVector ZERO = of(CoordinateLength.ZERO, CoordinateLength.ZERO);
-	private final CoordinateLengthUnit unit;
-	public final CoordinateLength x;
-	public final CoordinateLength y;
+	public static final CoordinateVector ZERO = of(0, 0);
+	public final double x;
+	public final double y;
 
-	public static CoordinateVector of(CoordinateLength x, CoordinateLength y) {
+	public static CoordinateVector of(double x, double y) {
 		return new CoordinateVector(x, y);
 	}
 
-	public static CoordinateVector of(CoordinateLengthUnit unit, double x, double y) {
-		return of(CoordinateLength.of(unit, x), CoordinateLength.of(unit, y));
+	public static CoordinateVector ofAngular(double r, double angle) {
+		return of(r * Math.cos(angle * Math.PI / 180), r * (Math.sin(angle * Math.PI / 180)));
 	}
 
-	public static CoordinateVector of(CoordinateLength r, double angle) {
-		return CoordinateVector.of(r.scale(Math.cos(angle * Math.PI / 180)), r.scale(Math.sin(angle * Math.PI / 180)));
-	}
-
-	public CoordinateVector(CoordinateLength x, CoordinateLength y) {
-		unit = x.getUnit();
+	public CoordinateVector(double x, double y) {
 		this.x = x;
-		this.y = y.withUnit(unit);
+		this.y = y;
 	}
 
-	public CoordinateLength length() {
-		double xVal = x.getOriginalValue();
-		double yVal = y.getOriginalValue();
-		return new CoordinateLength(unit, Math.sqrt(xVal * xVal + yVal * yVal));
+	public double length() {
+		return Math.sqrt(x * x + y * y);
 	}
 
 	public CoordinateVector normalize() {
-		return scale(1 / length().getOriginalValue());
+		return scale(1 / length());
 	}
 
 	public CoordinateVector scale(double factor) {
-		return new CoordinateVector(x.scale(factor), y.scale(factor));
-	}
-
-	public CoordinateVector scale(CoordinateLength factor) {
-		return scale(factor.getValue(unit));
+		return new CoordinateVector(x * factor, y * factor);
 	}
 
 	/**
 	 * Return the vector rotated 90 degrees counter clockwise
 	 */
 	public CoordinateVector normal() {
-		return new CoordinateVector(y.scale(-1), x);
+		return new CoordinateVector(-y, x);
 	}
 
 	public CoordinateVector minus(CoordinateVector other) {
-		return of(x.minus(other.x), y.minus(other.y));
+		return of(x - other.x, y - other.y);
 	}
 
 	public CoordinateVector negate() {
@@ -59,7 +47,7 @@ public class CoordinateVector {
 	}
 
 	public CoordinateVector plus(CoordinateVector other) {
-		return of(x.plus(other.x), y.plus(other.y));
+		return of(x + other.x, y + other.y);
 	}
 
 	/**
@@ -67,9 +55,7 @@ public class CoordinateVector {
 	 * direction from this vector to other
 	 */
 	public double angleTo(CoordinateVector other) {
-		double result = 180 / Math.PI
-				* Math.atan2(x.getValue(unit) * other.y.getValue(unit) - y.getValue(unit) * other.x.getValue(unit),
-						x.getValue(unit) * other.x.getValue(unit) + y.getValue(unit) * other.y.getValue(unit));
+		double result = 180 / Math.PI * Math.atan2(x * other.y - y * other.x, x * other.x + y * other.y);
 		if (result < 0)
 			result += 360;
 		return result;
@@ -80,7 +66,7 @@ public class CoordinateVector {
 	 * direction
 	 */
 	public double angle() {
-		double result = 180 / Math.PI * Math.atan2(y.getValue(unit), x.getValue(unit));
+		double result = 180 / Math.PI * Math.atan2(y, x);
 		if (result < 0)
 			result += 360;
 		return result;
@@ -91,32 +77,32 @@ public class CoordinateVector {
 		return "(" + x + "," + y + ")";
 	}
 
-	public CoordinateVector minus(CoordinateLength dx, CoordinateLength dy) {
+	public CoordinateVector minus(double dx, double dy) {
 		return minus(CoordinateVector.of(dx, dy));
 	}
 
-	public CoordinateVector minusX(CoordinateLength dx) {
-		return minus(dx, CoordinateLength.of(unit, 0));
+	public CoordinateVector minusX(double dx) {
+		return minus(dx, 0);
 	}
 
-	public CoordinateVector minusY(CoordinateLength dy) {
-		return minus(CoordinateLength.of(unit, 0), dy);
+	public CoordinateVector minusY(double dy) {
+		return minus(0, dy);
 	}
 
-	public CoordinateVector plus(CoordinateLength dx, CoordinateLength dy) {
+	public CoordinateVector plus(double dx, double dy) {
 		return plus(CoordinateVector.of(dx, dy));
 	}
 
-	public CoordinateVector plusX(CoordinateLength dx) {
-		return plus(dx, CoordinateLength.of(unit, 0));
+	public CoordinateVector plusX(double dx) {
+		return plus(dx, 0);
 	}
 
-	public CoordinateVector plusY(CoordinateLength dy) {
-		return plus(CoordinateLength.of(unit, 0), dy);
+	public CoordinateVector plusY(double dy) {
+		return plus(0, dy);
 	}
 
 	public double dotProduct(CoordinateVector other) {
-		return x.getValue(unit) * other.x.getValue(unit) + y.getValue(unit) * other.y.getValue(unit);
+		return x * other.x + y * other.y;
 	}
 
 	/**
@@ -124,9 +110,7 @@ public class CoordinateVector {
 	 */
 	public CoordinateVector rotate(double angle) {
 		double a = angle / 180 * Math.PI;
-		double x = this.x.getValue(unit);
-		double y = this.y.getValue(unit);
-		return of(unit, Math.cos(a) * x - Math.sin(a) * y, Math.sin(a) * x + Math.cos(a) * y);
+		return of(Math.cos(a) * x - Math.sin(a) * y, Math.sin(a) * x + Math.cos(a) * y);
 	}
 
 }

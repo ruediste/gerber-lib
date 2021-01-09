@@ -5,18 +5,16 @@ import static java.util.stream.Collectors.toList;
 import java.util.List;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.parser.InputPosition;
 
 public enum StandardApertureTemplate {
 	C {
 		@Override
-		List<CoordinateLength> validateParameters(List<CoordinateLength> parameters, WarningCollector warningsCollector,
+		List<Double> validateParameters(List<Double> parameters, WarningCollector warningsCollector,
 				InputPosition pos) {
 			if (parameters.size() < 1) {
 				warningsCollector.add(pos, "Circle diameter not given, defaulting to 1 mm");
-				return List.of(new CoordinateLength(CoordinateLengthUnit.MM, 1));
+				return List.of(1.);
 			}
 			if (parameters.size() > 2) {
 				warningsCollector.add(pos, "too many parameters given for circle");
@@ -27,39 +25,38 @@ public enum StandardApertureTemplate {
 	},
 	R {
 		@Override
-		List<CoordinateLength> validateParameters(List<CoordinateLength> parameters, WarningCollector warningsCollector,
+		List<Double> validateParameters(List<Double> parameters, WarningCollector warningsCollector,
 				InputPosition pos) {
 			return parameters;
 		}
 	},
 	O {
 		@Override
-		List<CoordinateLength> validateParameters(List<CoordinateLength> parameters, WarningCollector warningsCollector,
+		List<Double> validateParameters(List<Double> parameters, WarningCollector warningsCollector,
 				InputPosition pos) {
 			return parameters;
 		}
 	},
 	P {
 		@Override
-		List<CoordinateLength> validateParameters(List<CoordinateLength> parameters, WarningCollector warningsCollector,
+		List<Double> validateParameters(List<Double> parameters, WarningCollector warningsCollector,
 				InputPosition pos) {
 			if (parameters.size() < 1) {
 				warningsCollector.add(pos, "Polygon diameter and number of vertices not given, defaulting to 1 mm/6");
-				return List.of(new CoordinateLength(CoordinateLengthUnit.MM, 1),
-						new CoordinateLength(CoordinateLengthUnit.MM, 6));
+				return List.of(1., 6.);
 			}
 			if (parameters.size() < 2) {
 				warningsCollector.add(pos, "Polygon number of vertices not given, defaulting to 6");
-				parameters.add(new CoordinateLength(CoordinateLengthUnit.MM, 6));
+				parameters.add(6.);
 			}
-			int verticeCount = (int) parameters.get(1).getOriginalValue();
+			int verticeCount = (int) (double) parameters.get(1);
 			if (verticeCount < 3) {
 				warningsCollector.add(pos, "Polygon number of vertices too small: " + verticeCount);
-				parameters.set(1, new CoordinateLength(CoordinateLengthUnit.MM, 3));
+				parameters.set(1, 3.);
 			}
 			if (verticeCount > 12) {
 				warningsCollector.add(pos, "Polygon number of vertices too large: " + verticeCount);
-				parameters.set(1, new CoordinateLength(CoordinateLengthUnit.MM, 12));
+				parameters.set(1, 12.);
 			}
 			if (parameters.size() > 4) {
 				warningsCollector.add(pos, "too many parameters given for polygon");
@@ -69,6 +66,6 @@ public enum StandardApertureTemplate {
 		}
 	};
 
-	abstract List<CoordinateLength> validateParameters(List<CoordinateLength> parameters,
-			WarningCollector warningsCollector, InputPosition pos);
+	abstract List<Double> validateParameters(List<Double> parameters, WarningCollector warningsCollector,
+			InputPosition pos);
 }

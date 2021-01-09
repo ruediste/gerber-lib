@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
 import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.linAlg.CoordinateVector;
@@ -56,8 +55,8 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		def.nr = number;
 		Optional<StandardApertureTemplate> standardTemplate = Stream.of(StandardApertureTemplate.values())
 				.filter(x -> x.name().equals(template)).findFirst();
-		def.parameters = parameters.stream().map(str -> new CoordinateLength(state.unit, Double.parseDouble(str)))
-				.collect(toList());
+		def.parameters = parameters.stream()
+				.map(str -> state.unit.convertTo(CoordinateLengthUnit.MM, Double.parseDouble(str))).collect(toList());
 		if (standardTemplate.isPresent()) {
 			def.standardTemplate = standardTemplate.get();
 			def.parameters = def.standardTemplate.validateParameters(def.parameters, warningCollector, null);
@@ -94,15 +93,15 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		state.coordinateFormat = format;
 	}
 
-	CoordinateLength parseCoordinateX(String str) {
+	Double parseCoordinateX(String str) {
 		return parseCoordinate(str, state.coordinateFormat.xIntegerDigits, state.coordinateFormat.xDecimalDigits);
 	}
 
-	CoordinateLength parseCoordinateY(String str) {
+	Double parseCoordinateY(String str) {
 		return parseCoordinate(str, state.coordinateFormat.yIntegerDigits, state.coordinateFormat.yDecimalDigits);
 	}
 
-	CoordinateLength parseCoordinate(String str, int integerDigits, int decimalDigits) {
+	Double parseCoordinate(String str, int integerDigits, int decimalDigits) {
 		if (str == null)
 			return null;
 		String tmp = str;
@@ -117,7 +116,7 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		while (tmp.length() < integerDigits + decimalDigits)
 			tmp = "0" + tmp;
 		double value = sign * Double.parseDouble(tmp.substring(0, integerDigits) + "." + tmp.substring(integerDigits));
-		return new CoordinateLength(state.unit, value);
+		return state.unit.convertTo(CoordinateLengthUnit.MM, value);
 	}
 
 	@Override
@@ -125,26 +124,26 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 
 		if (state.currentX == null) {
 			warningCollector.add(pos, "No initial x coordinate given. Defaulting to 0");
-			state.currentX = new CoordinateLength(state.unit, 0);
+			state.currentX = 0.;
 		}
 		if (state.currentY == null) {
 			warningCollector.add(pos, "No initial y coordinate given. Defaulting to 0");
-			state.currentY = new CoordinateLength(state.unit, 0);
+			state.currentY = 0.;
 		}
 
-		CoordinateLength targetX = state.currentX;
-		CoordinateLength targetY = state.currentY;
+		double targetX = state.currentX;
+		double targetY = state.currentY;
 		if (x != null)
 			targetX = parseCoordinateX(x);
 		if (y != null)
 			targetY = parseCoordinateY(y);
 
-		CoordinateLength i = parseCoordinateX(iStr);
+		Double i = parseCoordinateX(iStr);
 		if (i == null)
-			i = CoordinateLength.ZERO;
-		CoordinateLength j = parseCoordinateX(jStr);
+			i = 0.;
+		Double j = parseCoordinateX(jStr);
 		if (j == null)
-			j = CoordinateLength.ZERO;
+			j = 0.;
 
 		InterpolateParameter params = new InterpolateParameter(pos, state, CoordinatePoint.of(targetX, targetY),
 				CoordinateVector.of(i, j));

@@ -11,7 +11,6 @@ import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.read.GerberReadGraphicsAdapter;
 import com.github.ruediste.gerberLib.read.GerberReadGraphicsEventHandler;
@@ -28,7 +27,7 @@ public class BlockApertureTest {
 						+ "Y300D01*\n" + "%AB*%\n" + "D11*\n" + "X500Y500D03*\n" + "X1000Y500D03*\n" + "M02*").file();
 		InOrder order = inOrder(handler);
 		order.verify(handler).interpolate(argThat(p -> {
-			assertEquals(CoordinatePoint.of(CoordinateLengthUnit.MM, 7, 8), p.target);
+			assertEquals(CoordinatePoint.of(7, 8), p.target);
 			return true;
 		}));
 	}

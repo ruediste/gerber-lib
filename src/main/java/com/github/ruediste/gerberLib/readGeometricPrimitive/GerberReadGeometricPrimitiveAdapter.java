@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.github.ruediste.gerberLib.WarningCollector;
-import com.github.ruediste.gerberLib.linAlg.CoordinateLength;
 import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.linAlg.CoordinateVector;
@@ -21,8 +20,8 @@ import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroVariableD
 import com.github.ruediste.gerberLib.parser.InputPosition;
 import com.github.ruediste.gerberLib.parser.InterpolationMode;
 import com.github.ruediste.gerberLib.read.ApertureDefinition;
-import com.github.ruediste.gerberLib.read.GerberReadGraphicsEventHandler;
 import com.github.ruediste.gerberLib.read.GerberGraphicsState;
+import com.github.ruediste.gerberLib.read.GerberReadGraphicsEventHandler;
 import com.github.ruediste.gerberLib.read.InterpolateParameter;
 import com.github.ruediste.gerberLib.read.MacroExpressionEvaluator;
 import com.github.ruediste.gerberLib.read.QuadrantMode;
@@ -45,16 +44,16 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 		InputPosition pos = params.pos;
 		handler.beginObject(pos, params.state.polarity);
 
-		CoordinateLength width;
+		double width;
 		ApertureDefinition aperture = params.state.currentAperture;
 		if (aperture.standardTemplate == StandardApertureTemplate.C) {
 			width = aperture.parameters.get(0);
 		} else {
 			warningCollector.add(pos,
 					"Invalid aperture D" + aperture.nr + " for interpolation, only standard circle is allowed.");
-			width = new CoordinateLength(unit, 1);
+			width = 1;
 		}
-		CoordinateLength width2 = width.scale(0.5);
+		double width2 = width / 2;
 
 		CoordinatePoint start = params.state.current();
 		CoordinatePoint end = params.target;
@@ -86,16 +85,16 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 				case MULTI: {
 					var radius = params.ij.length();
 					CoordinatePoint center = start.plus(params.ij);
-					var radiusOuter = radius.plus(width2);
-					var radiusInner = radius.minus(width2);
+					var radiusOuter = radius + width2;
+					var radiusInner = radius - width2;
 					handler.beginPath(pos, Exposure.ON);
-					handler.addArc(pos, center.minus(radiusOuter, radiusOuter), radiusOuter.scale(2),
-							radiusOuter.scale(2), 0, 360);
+					handler.addArc(pos, center.minus(radiusOuter, radiusOuter), radiusOuter * 2, radiusOuter * 2, 0,
+							360);
 					handler.endPath(pos, Exposure.ON);
 
 					handler.beginPath(pos, Exposure.OFF);
-					handler.addArc(pos, center.minus(radiusInner, radiusInner), radiusInner.scale(2),
-							radiusInner.scale(2), 0, 360);
+					handler.addArc(pos, center.minus(radiusInner, radiusInner), radiusInner * 2, radiusInner * 2, 0,
+							360);
 					handler.endPath(pos, Exposure.OFF);
 				}
 					break;
@@ -115,11 +114,11 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 				var offsetStart = center.vectorTo(start).normalize().scale(width).scale(0.5);
 				var offsetEnd = center.vectorTo(end).normalize().scale(width).scale(0.5);
 
-				CoordinateLength radius = center.vectorTo(start).length();
-				CoordinateLength radiusOuter = radius.plus(offsetStart.length());
-				CoordinateLength diameterOuter = radiusOuter.scale(2);
-				CoordinateLength radiusInner = radius.minus(offsetStart.length());
-				CoordinateLength diameterInner = radiusInner.scale(2);
+				double radius = center.vectorTo(start).length();
+				double radiusOuter = radius + offsetStart.length();
+				double diameterOuter = radiusOuter * 2;
+				double radiusInner = radius - offsetStart.length();
+				double diameterInner = radiusInner * 2;
 
 				handler.beginPath(pos, Exposure.ON);
 				handler.addArc(pos, center.minus(radiusOuter, radiusOuter), diameterOuter, diameterOuter, startAngle,
@@ -148,16 +147,16 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			return midPoint.projectPointToLine(centerOrig, midLineD);
 		} else {
 			CoordinatePoint[] candidates = new CoordinatePoint[] { start.plus(ij), start.minus(ij),
-					start.plus(ij.x, ij.y.scale(-1)), start.plus(ij.x.scale(-1), ij.y) };
+					start.plus(ij.x, -ij.y), start.plus(-ij.x, ij.y) };
 			CoordinatePoint bestCenter = null;
-			CoordinateLength bestDeviation = null;
+			Double bestDeviation = null;
 			for (CoordinatePoint candidate : candidates) {
 				var proj = midPoint.projectPointToLine(candidate, midLineD);
 				var span = Math.abs(angle(proj.vectorTo(start).angle(), proj.vectorTo(end).angle(), clockWise));
 				if (span > 90)
 					continue;
-				CoordinateLength deviation = proj.vectorTo(candidate).length();
-				if (bestCenter == null || deviation.compareTo(bestDeviation) < 0) {
+				double deviation = proj.vectorTo(candidate).length();
+				if (bestCenter == null || deviation < bestDeviation) {
 					bestCenter = proj;
 					bestDeviation = deviation;
 				}
@@ -195,13 +194,12 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			case C: {
 				var diameter = aperture.parameters.get(0);
 				handler.beginPath(pos, Exposure.ON);
-				handler.addArc(pos, state.current().minus(diameter.scale(0.5), diameter.scale(0.5)), diameter, diameter,
-						0, 360);
+				handler.addArc(pos, state.current().minus(diameter / 2, diameter / 2), diameter, diameter, 0, 360);
 				handler.endPath(pos, Exposure.ON);
 				if (aperture.parameters.size() >= 2) {
 					var hole = aperture.parameters.get(1);
 					handler.beginPath(pos, Exposure.OFF);
-					handler.addArc(pos, state.current().minus(hole.scale(0.5), hole.scale(0.5)), hole, hole, 0, 360);
+					handler.addArc(pos, state.current().minus(hole / 2, hole / 2), hole, hole, 0, 360);
 					handler.endPath(pos, Exposure.OFF);
 				}
 			}
@@ -210,9 +208,9 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			case R: {
 				var w = aperture.parameters.get(0);
 				var h = aperture.parameters.get(1);
-				var vx = CoordinateVector.of(w, CoordinateLength.of(state.unit, 0));
-				var vy = CoordinateVector.of(CoordinateLength.of(state.unit, 0), h);
-				var p1 = state.current().minus(w.scale(0.5), h.scale(0.5));
+				var vx = CoordinateVector.of(w, 0);
+				var vy = CoordinateVector.of(0, h);
+				var p1 = state.current().minus(w / 2, h / 2);
 				var p2 = p1.plus(vx);
 				var p3 = p2.plus(vy);
 				var p4 = p1.plus(vy);
@@ -226,33 +224,33 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 					var hole = aperture.parameters.get(2);
 
 					handler.beginPath(pos, Exposure.OFF);
-					handler.addArc(pos, state.current().minus(hole.scale(0.5), hole.scale(0.5)), hole, hole, 0, 360);
+					handler.addArc(pos, state.current().minus(hole / 2, hole / 2), hole, hole, 0, 360);
 					handler.endPath(pos, Exposure.OFF);
 				}
 			}
 				break;
 			case O: {
-				var w = aperture.parameters.get(0);
-				var h = aperture.parameters.get(1);
+				double w = aperture.parameters.get(0);
+				double h = aperture.parameters.get(1);
 				handler.beginPath(pos, Exposure.ON);
-				if (w.getValue(state.unit) < h.getValue(state.unit)) {
+				if (w < h) {
 					// height is bigger
-					var p1 = state.current().plus(w.scale(-0.5), h.scale(0.5).minus(w.scale(0.5)));
-					handler.addArc(pos, p1.minusY(w.scale(0.5)), w, w, 180, -180);
+					var p1 = state.current().plus(-w / 2, h / 2 - w / 2);
+					handler.addArc(pos, p1.minusY(w / 2), w, w, 180, -180);
 					var p2 = p1.plusX(w);
-					var p3 = state.current().plus(w.scale(0.5), h.scale(-0.5).plus(w.scale(0.5)));
+					var p3 = state.current().plus(w / 2, w / 2 - h / 2);
 					handler.addLine(pos, p2, p3);
 					var p4 = p3.minusX(w);
-					handler.addArc(pos, p4.minusY(w.scale(0.5)), w, w, 0, -180);
+					handler.addArc(pos, p4.minusY(w / 2), w, w, 0, -180);
 				} else {
 					// width is bigger
-					var p1 = state.current().plus(w.scale(0.5).minus(h.scale(0.5)), h.scale(0.5));
+					var p1 = state.current().plus(w / 2 - h / 2, h / 2);
 					var p2 = p1.minusY(h);
-					handler.addArc(pos, p2.minusX(h.scale(0.5)), h, h, 90, -180);
-					var p3 = state.current().plus(w.scale(-0.5).plus(h.scale(0.5)), h.scale(-0.5));
+					handler.addArc(pos, p2.minusX(h / 2), h, h, 90, -180);
+					var p3 = state.current().plus(h / 2 - w / 2, -h / 2);
 					handler.addLine(pos, p2, p3);
 					var p4 = p3.plusY(h);
-					handler.addArc(pos, p3.minusX(h.scale(0.5)), h, h, -90, -180);
+					handler.addArc(pos, p3.minusX(h / 2), h, h, -90, -180);
 					handler.addLine(pos, p4, p1);
 
 				}
@@ -260,19 +258,19 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 				if (aperture.parameters.size() >= 3) {
 					var hole = aperture.parameters.get(2);
 					handler.beginPath(pos, Exposure.OFF);
-					handler.addArc(pos, state.current().minus(hole.scale(0.5), hole.scale(0.5)), hole, hole, 0, 360);
+					handler.addArc(pos, state.current().minus(hole / 2, hole / 2), hole, hole, 0, 360);
 					handler.endPath(pos, Exposure.OFF);
 				}
 			}
 				break;
 			case P: {
 				var diameter = aperture.parameters.get(0);
-				var radius = diameter.scale(0.5);
-				var verticesCount = (int) aperture.parameters.get(1).getOriginalValue();
+				var radius = diameter / 2;
+				var verticesCount = (int) (double) aperture.parameters.get(1);
 				double rotationAngle = 0.;
 				if (aperture.parameters.size() >= 3)
-					rotationAngle = aperture.parameters.get(2).getOriginalValue();
-				CoordinateLength holeDiameter = null;
+					rotationAngle = aperture.parameters.get(2);
+				Double holeDiameter = null;
 				if (aperture.parameters.size() >= 4)
 					holeDiameter = aperture.parameters.get(3);
 
@@ -293,8 +291,8 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 				if (holeDiameter != null) {
 					handler.beginPath(pos, Exposure.OFF);
-					handler.addArc(pos, state.current().minus(holeDiameter.scale(0.5), holeDiameter.scale(0.5)),
-							holeDiameter, holeDiameter, 0, 360);
+					handler.addArc(pos, state.current().minus(holeDiameter / 2, holeDiameter / 2), holeDiameter,
+							holeDiameter, 0, 360);
 					handler.endPath(pos, Exposure.OFF);
 				}
 
@@ -305,8 +303,8 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			}
 
 		} else {
-			MacroExpressionEvaluator evaluator = new MacroExpressionEvaluator(state.unit, warningCollector);
-			List<CoordinateLength> parameters = aperture.parameters;
+			MacroExpressionEvaluator evaluator = new MacroExpressionEvaluator(warningCollector);
+			List<Double> parameters = aperture.parameters;
 			for (int i = 0; i < parameters.size(); i++) {
 				evaluator.set(i, parameters.get(i));
 			}
@@ -315,7 +313,7 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 					@Override
 					public void visit(MacroVariableDefinitionStatement macroVariableDefinitionStatement) {
-						CoordinateLength value = evaluator.evaluate(macroVariableDefinitionStatement.exp);
+						Double value = evaluator.evaluate(macroVariableDefinitionStatement.exp);
 						evaluator.set(macroVariableDefinitionStatement.variableNr, value);
 					}
 
@@ -326,23 +324,23 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 					@Override
 					public void visit(MacroPrimitiveCircle circle) {
-						CoordinateLength exposureValue = evaluator.evaluate(circle.exposure);
+						Double exposureValue = evaluator.evaluate(circle.exposure);
 						var diameter = evaluator.evaluate(circle.diameter);
-						CoordinateLength centerX = evaluator.evaluate(circle.centerX);
-						CoordinateLength centerY = evaluator.evaluate(circle.centerY);
+						Double centerX = evaluator.evaluate(circle.centerX);
+						Double centerY = evaluator.evaluate(circle.centerY);
 						if (exposureValue == null || diameter == null || centerX == null || centerY == null)
 							return;
-						var exposure = exposureValue.getOriginalValue() == 0 ? Exposure.OFF : Exposure.ON;
+						var exposure = exposureValue == 0 ? Exposure.OFF : Exposure.ON;
 						var xy = CoordinateVector.of(centerX, centerY);
 						if (circle.rotationAngle != null) {
 							var rotation = evaluator.evaluate(circle.rotationAngle);
 							if (rotation == null)
 								return;
-							xy = xy.rotate(rotation.getOriginalValue());
+							xy = xy.rotate(rotation);
 						}
 
 						var center = state.current().plus(xy);
-						var radius = diameter.scale(0.5);
+						var radius = diameter / 2;
 
 						handler.beginPath(pos, exposure);
 						handler.addArc(pos, center.minus(radius, radius), diameter, diameter, 0, 360);
@@ -351,7 +349,7 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 					@Override
 					public void visit(MacroPrimitiveVectorLine line) {
-						CoordinateLength exposureValue = evaluator.evaluate(line.exposure);
+						Double exposureValue = evaluator.evaluate(line.exposure);
 						var width = evaluator.evaluate(line.width);
 						var startX = evaluator.evaluate(line.startX);
 						var startY = evaluator.evaluate(line.startY);
@@ -362,20 +360,20 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 								|| endY == null || rotationValue == null)
 							return;
 
-						double r = rotationValue.getOriginalValue();
+						double r = rotationValue;
 						var start = state.current().plus(CoordinateVector.of(startX, startY).rotate(r));
 						var end = state.current().plus(CoordinateVector.of(endX, endY).rotate(r));
 
 						var d = start.vectorTo(end);
-						var n = d.normal().normalize().scale(width.scale(0.5));
-						var exposure = exposureValue.getOriginalValue() == 0 ? Exposure.OFF : Exposure.ON;
+						var n = d.normal().normalize().scale(width / 2);
+						var exposure = exposureValue == 0 ? Exposure.OFF : Exposure.ON;
 
 						addRectangle(pos, exposure, start.plus(n), end.plus(n), end.minus(n), start.minus(n));
 					}
 
 					@Override
 					public void visit(MacroPrimitiveCenterLine line) {
-						CoordinateLength exposureValue = evaluator.evaluate(line.exposure);
+						Double exposureValue = evaluator.evaluate(line.exposure);
 						var width = evaluator.evaluate(line.width);
 						var height = evaluator.evaluate(line.height);
 						var centerX = evaluator.evaluate(line.centerX);
@@ -384,18 +382,18 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 						if (exposureValue == null || width == null || height == null || centerX == null
 								|| centerY == null || rotationValue == null)
 							return;
-						var exposure = exposureValue.getOriginalValue() == 0 ? Exposure.OFF : Exposure.ON;
-						double r = rotationValue.getOriginalValue();
+						var exposure = exposureValue == 0 ? Exposure.OFF : Exposure.ON;
+						double r = rotationValue;
 						var center = state.current().plus(CoordinateVector.of(centerX, centerY).rotate(r));
-						var dw = CoordinateVector.of(width, CoordinateLength.ZERO).rotate(r).scale(0.5);
-						var dh = CoordinateVector.of(CoordinateLength.ZERO, height).rotate(r).scale(0.5);
+						var dw = CoordinateVector.of(width / 2, 0).rotate(r);
+						var dh = CoordinateVector.of(0, height / 2).rotate(r);
 						addRectangle(pos, exposure, center.plus(dw).plus(dh), center.plus(dw).minus(dh),
 								center.minus(dw).minus(dh), center.minus(dw).plus(dh));
 					}
 
 					@Override
 					public void visit(MacroPrimitiveOutline line) {
-						CoordinateLength exposureValue = evaluator.evaluate(line.exposure);
+						Double exposureValue = evaluator.evaluate(line.exposure);
 						var startX = evaluator.evaluate(line.startX);
 						var startY = evaluator.evaluate(line.startY);
 						var rotationValue = evaluator.evaluate(line.rotation);
@@ -409,8 +407,8 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 								return;
 							vertices.add(CoordinateVector.of(x, y));
 						}
-						var exposure = exposureValue.getOriginalValue() == 0 ? Exposure.OFF : Exposure.ON;
-						double r = rotationValue.getOriginalValue();
+						var exposure = exposureValue == 0 ? Exposure.OFF : Exposure.ON;
+						double r = rotationValue;
 						CoordinatePoint startPoint = state.current()
 								.plus(CoordinateVector.of(startX, startY).rotate(r));
 						CoordinatePoint lastPoint = startPoint;
@@ -435,12 +433,12 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 						if (centerX == null || centerY == null || diameter == null || exposureValue == null
 								|| numberOfVertices == null || rotation == null)
 							return;
-						var r = rotation.getOriginalValue();
+						var r = rotation;
 
-						int verticesCount = (int) numberOfVertices.getOriginalValue();
+						int verticesCount = (int) (double) numberOfVertices;
 						double sectionAngle = 360. / verticesCount;
-						var exposure = exposureValue.getOriginalValue() == 0 ? Exposure.OFF : Exposure.ON;
-						var radius = diameter.scale(0.5);
+						var exposure = exposureValue == 0 ? Exposure.OFF : Exposure.ON;
+						var radius = diameter / 2;
 						var center = CoordinateVector.of(centerX, centerY);
 						CoordinatePoint startPoint = state.current().plus(center.plusX(radius).rotate(r));
 						CoordinatePoint lastPoint = startPoint;
@@ -473,49 +471,47 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 								|| rotation == null)
 							return;
 
-						var r = rotation.getOriginalValue();
+						var r = rotation;
 						var center = CoordinateVector.of(centerX, centerY);
-						for (int i = 0; i < (int) maxRings.getOriginalValue(); i++) {
-							var d = diameter.minus(thickness.scale(2 * i)).minus(gap.scale(2 * i));
-							if (d.getValue(state.unit) <= 0)
+						for (int i = 0; i < (int) (double) maxRings; i++) {
+							var d = diameter - (2 * i * (thickness + gap));
+							if (d <= 0)
 								break;
 							handler.beginPath(pos, Exposure.ON);
-							handler.addArc(pos,
-									state.current().plus(center.rotate(r).minus(d.scale(0.5), d.scale(0.5))), d, d, 0,
+							handler.addArc(pos, state.current().plus(center.rotate(r).minus(d / 2, d / 2)), d, d, 0,
 									360);
 							handler.endPath(pos, Exposure.ON);
 
-							d = d.minus(gap.scale(2));
-							if (d.getValue(state.unit) <= 0)
+							d -= gap * 2;
+							if (d <= 0)
 								break;
 							handler.beginPath(pos, Exposure.OFF);
-							handler.addArc(pos,
-									state.current().plus(center.rotate(r).minus(d.scale(0.5), d.scale(0.5))), d, d, 0,
+							handler.addArc(pos, state.current().plus(center.rotate(r).minus(d / 2, d / 2)), d, d, 0,
 									360);
 							handler.endPath(pos, Exposure.OFF);
 						}
 
-						if (thickness.getOriginalValue() > 0) {
+						if (thickness > 0) {
 							{
-								var p1 = state.current().plus(center
-										.plus(crosshairThickness.scale(-0.5), crosshairLength.scale(0.5)).rotate(r));
-								var p2 = state.current().plus(center
-										.plus(crosshairThickness.scale(0.5), crosshairLength.scale(0.5)).rotate(r));
-								var p3 = state.current().plus(center
-										.plus(crosshairThickness.scale(0.5), crosshairLength.scale(-0.5)).rotate(r));
-								var p4 = state.current().plus(center
-										.plus(crosshairThickness.scale(-0.5), crosshairLength.scale(-0.5)).rotate(r));
+								var p1 = state.current()
+										.plus(center.plus(-crosshairThickness / 2, crosshairLength / 2).rotate(r));
+								var p2 = state.current()
+										.plus(center.plus(crosshairThickness / 2, crosshairLength / 2).rotate(r));
+								var p3 = state.current()
+										.plus(center.plus(crosshairThickness / 2, -crosshairLength / 2).rotate(r));
+								var p4 = state.current()
+										.plus(center.minus(crosshairThickness / 2, crosshairLength / 2).rotate(r));
 								addRectangle(pos, Exposure.ON, p1, p2, p3, p4);
 							}
 							{
-								var p1 = state.current().plus(center
-										.plus(crosshairLength.scale(-0.5), crosshairThickness.scale(0.5)).rotate(r));
-								var p2 = state.current().plus(center
-										.plus(crosshairLength.scale(0.5), crosshairThickness.scale(0.5)).rotate(r));
-								var p3 = state.current().plus(center
-										.plus(crosshairLength.scale(0.5), crosshairThickness.scale(-0.5)).rotate(r));
-								var p4 = state.current().plus(center
-										.plus(crosshairLength.scale(-0.5), crosshairThickness.scale(-0.5)).rotate(r));
+								var p1 = state.current()
+										.plus(center.plus(-crosshairLength / 2, crosshairThickness / 2).rotate(r));
+								var p2 = state.current()
+										.plus(center.plus(crosshairLength / 2, crosshairThickness / 2).rotate(r));
+								var p3 = state.current()
+										.plus(center.plus(crosshairLength / 2, -crosshairThickness / 2).rotate(r));
+								var p4 = state.current()
+										.plus(center.minus(crosshairLength / 2, crosshairThickness / 2).rotate(r));
 								addRectangle(pos, Exposure.ON, p1, p2, p3, p4);
 							}
 						}
@@ -534,18 +530,18 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 					@Override
 					public void visit(MacroPrimitiveThermal thermal) {
 						var outerDiameter = evaluator.evaluate(thermal.outerDiameter);
-						CoordinateLength outerRadius = outerDiameter.scale(0.5);
+						Double outerRadius = outerDiameter / 2;
 						var innerDiameter = evaluator.evaluate(thermal.innerDiameter);
-						CoordinateLength centerX = evaluator.evaluate(thermal.centerX);
-						CoordinateLength centerY = evaluator.evaluate(thermal.centerY);
-						CoordinateLength gap = evaluator.evaluate(thermal.gap);
+						Double centerX = evaluator.evaluate(thermal.centerX);
+						Double centerY = evaluator.evaluate(thermal.centerY);
+						Double gap = evaluator.evaluate(thermal.gap);
 						if (outerDiameter == null || innerDiameter == null || centerX == null || centerY == null
 								|| gap == null)
 							return;
 						var xy = CoordinateVector.of(centerX, centerY);
 						var rotation = evaluator.evaluate(thermal.rotation);
 						if (rotation != null) {
-							xy = xy.rotate(rotation.getOriginalValue());
+							xy = xy.rotate(rotation);
 						}
 
 						var center = state.current().plus(xy);
@@ -555,16 +551,16 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 								360);
 						handler.endPath(pos, Exposure.ON);
 						handler.beginPath(pos, Exposure.OFF);
-						handler.addArc(pos, center.minus(innerDiameter.scale(0.5), innerDiameter.scale(0.5)),
-								innerDiameter, innerDiameter, 0, 360);
+						handler.addArc(pos, center.minus(innerDiameter / 2, innerDiameter / 2), innerDiameter,
+								innerDiameter, 0, 360);
 						handler.endPath(pos, Exposure.OFF);
 
-						gap = gap.scale(0.5);
+						gap = gap / 2;
 						{
 							handler.beginPath(pos, Exposure.OFF);
-							CoordinatePoint p1 = center.plus(gap.scale(-1), outerRadius);
+							CoordinatePoint p1 = center.plus(-gap, outerRadius);
 							CoordinatePoint p2 = center.plus(gap, outerRadius);
-							CoordinatePoint p3 = center.plus(gap, outerRadius.scale(-1));
+							CoordinatePoint p3 = center.plus(gap, -outerRadius);
 							CoordinatePoint p4 = center.minus(gap, outerRadius);
 							handler.addLine(pos, p1, p2);
 							handler.addLine(pos, p2, p3);
@@ -575,9 +571,9 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 						{
 							handler.beginPath(pos, Exposure.OFF);
 							CoordinatePoint p1 = center.plus(outerRadius, gap);
-							CoordinatePoint p2 = center.plus(outerRadius, gap.scale(-1));
+							CoordinatePoint p2 = center.plus(outerRadius, -gap);
 							CoordinatePoint p3 = center.minus(outerRadius, gap);
-							CoordinatePoint p4 = center.plus(outerRadius.scale(-1), gap);
+							CoordinatePoint p4 = center.plus(-outerRadius, gap);
 							handler.addLine(pos, p1, p2);
 							handler.addLine(pos, p2, p3);
 							handler.addLine(pos, p3, p4);
@@ -621,7 +617,7 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 				switch (quadrantMode) {
 				case MULTI: {
 					var radius = params.ij.length();
-					handler.addArc(params.pos, start.minus(radius, radius), radius.scale(2), radius.scale(2), 0,
+					handler.addArc(params.pos, start.minus(radius, radius), radius * 2, radius * 2, 0,
 							clockWise ? -360 : 360);
 				}
 					break;
@@ -637,8 +633,8 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 				double startAngle = center.vectorTo(start).angle();
 				double endAngle = center.vectorTo(end).angle();
 
-				CoordinateLength radius = center.vectorTo(start).length();
-				CoordinateLength diameter = radius.scale(2);
+				double radius = center.vectorTo(start).length();
+				double diameter = radius * 2;
 
 				handler.addArc(params.pos, center.minus(radius, radius), diameter, diameter, startAngle,
 						angle(startAngle, endAngle, clockWise));

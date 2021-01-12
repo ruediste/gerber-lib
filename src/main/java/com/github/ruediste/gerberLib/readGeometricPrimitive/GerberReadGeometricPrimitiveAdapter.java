@@ -308,15 +308,18 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			MacroExpressionEvaluator evaluator = new MacroExpressionEvaluator(warningCollector);
 			List<Double> parameters = aperture.parameters;
 			for (int i = 0; i < parameters.size(); i++) {
-				evaluator.set(i, parameters.get(i));
+				evaluator.set(i + 1, parameters.get(i));
 			}
+			System.out.println("Values " + evaluator);
 			for (var statement : aperture.template.body.statements) {
+				System.out.println("Flashing " + statement);
 				statement.accept(new MacroStatementVisitor() {
 
 					@Override
 					public void visit(MacroVariableDefinitionStatement macroVariableDefinitionStatement) {
 						Double value = evaluator.evaluate(macroVariableDefinitionStatement.exp);
 						evaluator.set(macroVariableDefinitionStatement.variableNr, value);
+						System.out.println("New Values " + evaluator);
 					}
 
 					@Override

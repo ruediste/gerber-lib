@@ -51,4 +51,9 @@ public interface GerberParsingEventHandler {
 
 	public void loadScaling(InputPosition pos, String scaling);
 
+	public void beginStepAndRepeat(InputPosition pos);
+
+	public void endStepAndRepeat(InputPosition pos, String xRepeats, String yRepeats, String xDistance,
+			String yDistance);
+
 }

@@ -1,7 +1,9 @@
 package com.github.ruediste.gerberLib.read;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroExpression;
@@ -38,14 +40,12 @@ public class MacroExpressionEvaluator {
 			public Double visit(MacroExpressionBinaryOperation binaryOperation) {
 				var left = evaluate(binaryOperation.left);
 				var right = evaluate(binaryOperation.right);
-				if (left == null || right == null)
-					return null;
 				switch (binaryOperation.operation) {
 				case DIVIDE:
 					return left / right;
 				case MINUS:
 					return left - right;
-				case MULTIPY:
+				case MULTIPLY:
 					return left * right;
 				case PLUS:
 					return left + right;
@@ -56,20 +56,23 @@ public class MacroExpressionEvaluator {
 
 			@Override
 			public Double visit(MacroExpressionUnaryMinus unaryMinus) {
-				Double value = evaluate(unaryMinus.exp);
-				if (value == null)
-					return null;
-				return -value;
+				return -evaluate(unaryMinus.exp);
 			}
 
 			@Override
 			public Double visit(MacroExpressionVariable variable) {
 				Double result = variableValues.get(variable.variableNr);
 				if (result == null) {
-					warningCollector.add(variable.pos, "Variable $" + variable.variableNr + " not defined");
+					return 0.;
 				}
 				return result;
 			}
 		});
+	}
+
+	@Override
+	public String toString() {
+		return "{" + variableValues.entrySet().stream().sorted(Comparator.comparing(x -> x.getKey()))
+				.map(x -> x.getKey() + "=" + x.getValue()).collect(Collectors.joining(", ")) + "}";
 	}
 }

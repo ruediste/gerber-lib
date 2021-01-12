@@ -7,7 +7,7 @@ import com.github.ruediste.gerberLib.read.QuadrantMode;
 
 public class GerberParser extends ParserBase<GerberParsingState> {
 	GerberParsingEventHandler handler;
-	private GerberMacroBodyParser macroBodyParser;
+	GerberMacroBodyParser macroBodyParser;
 
 	public GerberParser(GerberParsingEventHandler handler, String input) {
 		super(new ParsingContext<>(input, new GerberParsingState()));
@@ -33,7 +33,8 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 	}
 
 	void compound_statement() {
-		choice(this::region_statement, this::SR_statement, this::apeertureBlock_AB_statement, this::unknownStatement);
+		choice(this::region_statement, this::stepAndRepeat_SR_statement, this::apeertureBlock_AB_statement,
+				this::unknownStatement);
 	}
 
 	private void endOfFile() {
@@ -70,8 +71,26 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 		handler.endBlockAperture(nr);
 	}
 
-	void SR_statement() {
-		ctx.throwException("todo: SR");
+	void stepAndRepeat_SR_statement() {
+		var pos = ctx.copyPos();
+		next("%SR");
+		ctx.limitBacktracking();
+		next("X");
+		var xRepeats = integer();
+		next("Y");
+		var yRepeats = integer();
+		next("I");
+		var xDistance = decimal();
+		next("J");
+		var yDistance = decimal();
+		next("*%");
+		ctx.limitBacktracking();
+		handler.beginStepAndRepeat(pos);
+		zeroOrMore(this::in_block_statement);
+		ctx.limitBacktracking();
+		pos = ctx.copyPos();
+		next("%SR*%");
+		handler.endStepAndRepeat(pos, xRepeats, yRepeats, xDistance, yDistance);
 	}
 
 	void region_statement() {

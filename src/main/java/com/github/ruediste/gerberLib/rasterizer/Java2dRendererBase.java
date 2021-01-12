@@ -14,7 +14,7 @@ import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricP
 
 public abstract class Java2dRendererBase implements GerberReadGeometricPrimitiveEventHandler {
 
-	private static final boolean print = false;
+	private static final boolean print = true;
 
 	protected WarningCollector warningCollector;
 

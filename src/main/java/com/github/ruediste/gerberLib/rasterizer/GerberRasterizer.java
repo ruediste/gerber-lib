@@ -19,7 +19,7 @@ public class GerberRasterizer extends Java2dRendererBase {
 	public BufferedImage image;
 
 	public GerberRasterizer(WarningCollector warningCollector, double widthMM, double heightMM, double offsetXMM,
-			double offsetYMM, int pointsPerMM) {
+			double offsetYMM, double pointsPerMM) {
 		super(warningCollector);
 		this.warningCollector = warningCollector;
 		image = new BufferedImage((int) (widthMM * pointsPerMM), (int) (heightMM * pointsPerMM),

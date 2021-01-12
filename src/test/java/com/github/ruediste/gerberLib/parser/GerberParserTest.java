@@ -14,7 +14,6 @@ public class GerberParserTest {
 	GerberParsingEventHandler handler;
 
 	private GerberParser parser(String input) {
-
 		return new GerberParser(handler, input);
 	}
 

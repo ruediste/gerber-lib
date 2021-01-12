@@ -230,8 +230,7 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 			t.translate(current);
 			t.concatenate(apertureTransformation);
 			if (aperture.handlerCalls != null) {
-				System.out.println(
-						"Flash D" + aperture.nr + " current: " + current + " polarity: " + polarity + " trans: " + t);
+				// TODO: handle inversion of polarity
 				state.blockTransformations.push(t);
 				aperture.handlerCalls.forEach(Runnable::run);
 				state.blockTransformations.pop();
@@ -276,11 +275,11 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 	}
 
 	CoordinateTransformation blockApertureTransformation;
-	int blockApertureDepth;
+	int blockDepth;
 	Deque<List<Runnable>> handlerCalls = new ArrayDeque<>();
 
 	private void callHandler(Runnable call) {
-		if (blockApertureDepth == 0)
+		if (blockDepth == 0)
 			call.run();
 		else {
 			handlerCalls.peek().add(call);
@@ -289,7 +288,7 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 
 	@Override
 	public void beginBlockAperture(int nr) {
-		blockApertureDepth++;
+		blockDepth++;
 		handlerCalls.push(new ArrayList<>());
 		state.currentX = null;
 		state.currentY = null;
@@ -297,13 +296,46 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 
 	@Override
 	public void endBlockAperture(int nr) {
-		blockApertureDepth--;
+		blockDepth--;
 		ApertureDefinition def = new ApertureDefinition();
 		def.nr = nr;
 		def.handlerCalls = handlerCalls.pop();
 		aperturesDictionary.put(def.nr, def);
 		state.currentX = null;
 		state.currentY = null;
+	}
+
+	@Override
+	public void beginStepAndRepeat(InputPosition pos) {
+		blockDepth++;
+		handlerCalls.push(new ArrayList<>());
+	}
+
+	@Override
+	public void endStepAndRepeat(InputPosition pos, String xRepeatsStr, String yRepeatsStr, String xDistanceStr,
+			String yDistanceStr) {
+
+		blockDepth--;
+
+		List<Runnable> handlerCalls = this.handlerCalls.pop();
+
+		var xRepeats = Integer.parseInt(xRepeatsStr);
+		var yRepeats = Integer.parseInt(yRepeatsStr);
+		var xDistance = Double.parseDouble(xDistanceStr);
+		var yDistance = Double.parseDouble(yDistanceStr);
+		var current = state.current();
+
+		for (int x = 0; x < xRepeats; x++) {
+			for (int y = 0; y < yRepeats; y++) {
+				CoordinateTransformation t = state.blockTransformations.peek().copy();
+				t.translate(current);
+				t.translate(CoordinatePoint.of(x * xDistance, y * yDistance));
+				state.blockTransformations.push(t);
+				handlerCalls.forEach(Runnable::run);
+				state.blockTransformations.pop();
+			}
+
+		}
 	}
 
 	@Override

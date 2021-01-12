@@ -43,6 +43,9 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 
 	public abstract static class MacroStatement {
 		public abstract void accept(MacroStatementVisitor visitor);
+
+		@Override
+		public abstract String toString();
 	}
 
 	MacroStatement macroStatement() {
@@ -65,6 +68,11 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "$" + variableNr + "=" + exp;
 		}
 	}
 
@@ -94,9 +102,7 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		}, () -> {
 			next("7");
 			return new MacroPrimitiveThermal(par(), par(), par(), par(), par(), par());
-		}
-
-		);
+		});
 		next("*");
 		return primitive;
 	}
@@ -112,6 +118,11 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "// " + comment;
 		}
 	}
 
@@ -135,6 +146,12 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "circle exp:" + exposure + " diameter: " + diameter + " centerX:" + centerX + " centerY:" + centerY
+					+ " rotation:" + rotationAngle;
 		}
 	}
 
@@ -163,6 +180,12 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "vectorLine exp:" + exposure + " width: " + width + " startX:" + startX + " startY:" + startY
+					+ " endX:" + endX + " endY:" + endY + " rotation:" + rotation;
+		}
 	}
 
 	public static class MacroPrimitiveCenterLine extends MacroPrimitiveStatement {
@@ -187,6 +210,12 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "centerLine exp:" + exposure + " width: " + width + " height:" + height + " centerX:" + centerX
+					+ " centerY:" + centerY + " rotation:" + rotation;
 		}
 	}
 
@@ -213,6 +242,12 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "outline exp:" + exposure + " numVertices: " + numVertices + " startX:" + startX + " startY:"
+					+ startY + " vertices:" + vertices + " rotation:" + rotation;
+		}
 	}
 
 	public static class MacroPrimitivePolygon extends MacroPrimitiveStatement {
@@ -237,6 +272,13 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "polygon exp:" + exposure + " numberOfVertices:" + numberOfVertices + " centerX:" + centerX
+					+ " centerY:" + centerY + " diameter: " + diameter + " rotation:" + rotation;
+
 		}
 	}
 
@@ -270,6 +312,14 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "moire centerX:" + centerX + " centerY:" + centerY + " diameter: " + diameter + " thickness:"
+					+ thickness + " gap:" + gap + " maxRings:" + maxRings + " crosshairThickness:" + crosshairThickness
+					+ " crosshairLength:" + crosshairLength + " rotation:" + rotation;
+
+		}
 	}
 
 	public static class MacroPrimitiveThermal extends MacroPrimitiveStatement {
@@ -295,6 +345,12 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public void accept(MacroStatementVisitor visitor) {
 			visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "thermal centerX:" + centerX + " centerY:" + centerY + " outerDiameter: " + outerDiameter
+					+ " innerDiameter:" + innerDiameter + " gap:" + gap + " rotation:" + rotation;
+		}
 	}
 
 	public interface MacroExpressionVisitor<T> {
@@ -310,6 +366,9 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 
 	public abstract static class MacroExpression {
 		public abstract <T> T accept(MacroExpressionVisitor<T> visitor);
+
+		@Override
+		public abstract String toString();
 	}
 
 	public static class MacroExpressionValue extends MacroExpression {
@@ -323,6 +382,11 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public <T> T accept(MacroExpressionVisitor<T> visitor) {
 			return visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return value;
 		}
 	}
 
@@ -340,10 +404,15 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public <T> T accept(MacroExpressionVisitor<T> visitor) {
 			return visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "$" + variableNr;
+		}
 	}
 
 	public enum MacroExpressionOp {
-		PLUS, MINUS, MULTIPY, DIVIDE
+		PLUS, MINUS, MULTIPLY, DIVIDE
 	}
 
 	public static class MacroExpressionUnaryMinus extends MacroExpression {
@@ -356,6 +425,11 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		@Override
 		public <T> T accept(MacroExpressionVisitor<T> visitor) {
 			return visitor.visit(this);
+		}
+
+		@Override
+		public String toString() {
+			return "-(" + exp + ")";
 		}
 	}
 
@@ -375,36 +449,54 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		public <T> T accept(MacroExpressionVisitor<T> visitor) {
 			return visitor.visit(this);
 		}
+
+		@Override
+		public String toString() {
+			return "(" + left + ")" + operation + "(" + right + ")";
+		}
 	}
 
 	MacroExpression expression() {
-		var sign = optional(() -> any("+-"));
-		var exp = unsigned_expression();
-		if ("-".equals(sign)) {
-			return new MacroExpressionUnaryMinus(exp);
-		} else
-			return exp;
+		return choice(() -> addExpr(), () -> {
+			var sign = optional(() -> any("+-"));
+			var exp = addExpr();
+			if ("-".equals(sign)) {
+				return new MacroExpressionUnaryMinus(exp);
+			} else
+				return exp;
+		});
 	}
 
-	MacroExpression unsigned_expression() {
-		var left = term();
-		return optional(() -> {
-			var op = any("+-");
-			var right = unsigned_expression();
-			return new MacroExpressionBinaryOperation(left,
-					"+".contentEquals(op) ? MacroExpressionOp.PLUS : MacroExpressionOp.MINUS, right);
-		}, left);
-
+	MacroExpression addExpr() {
+		var left = mulExpr();
+		while (true) {
+			var leftFinal = left;
+			var opt = optional(() -> {
+				var op = any("+-");
+				var right = mulExpr();
+				return new MacroExpressionBinaryOperation(leftFinal,
+						"+".contentEquals(op) ? MacroExpressionOp.PLUS : MacroExpressionOp.MINUS, right);
+			});
+			if (opt == null)
+				return left;
+			left = opt;
+		}
 	}
 
-	MacroExpression term() {
+	MacroExpression mulExpr() {
 		var left = factor();
-		return optional(() -> {
-			var op = any("x/");
-			var right = term();
-			return new MacroExpressionBinaryOperation(left,
-					"x".contentEquals(op) ? MacroExpressionOp.MULTIPY : MacroExpressionOp.DIVIDE, right);
-		}, left);
+		while (true) {
+			var leftFinal = left;
+			var opt = optional(() -> {
+				var op = any("x/");
+				var right = factor();
+				return new MacroExpressionBinaryOperation(leftFinal,
+						"x".contentEquals(op) ? MacroExpressionOp.MULTIPLY : MacroExpressionOp.DIVIDE, right);
+			});
+			if (opt == null)
+				return left;
+			left = opt;
+		}
 	}
 
 	MacroExpression factor() {
@@ -432,6 +524,7 @@ public class GerberMacroBodyParser extends ParserBase<GerberParsingState> {
 		var nr = macro_variable();
 		next("=");
 		var exp = expression();
+		next("*");
 		return new MacroVariableDefinitionStatement(nr, exp);
 	}
 }

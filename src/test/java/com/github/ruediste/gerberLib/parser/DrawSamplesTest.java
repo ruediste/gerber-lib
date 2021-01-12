@@ -2,6 +2,11 @@ package com.github.ruediste.gerberLib.parser;
 
 import java.awt.geom.Rectangle2D;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,26 +18,17 @@ import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricP
 
 public class DrawSamplesTest {
 
-	private static String[] fileNames = new String[] {
-
-//			"2-13-1_Two_square_boxes.gbr", "2-13-2_Polarities_and_Apertures.gbr",
-//			"4-11-6_Block_with_different_orientations.gbr",
-
-			"4-6-4_Nested_blocks.gbr",
-
-//			"6-1-6-2_A_drill_file.gbr", "sample_macro.gbr", "sample_macro_X1.gbr",
-
-//			"SMD_prim_20.gbr", "SMD_prim_20_X1.gbr", "SMD_prim_21.gbr", "SMD_prim_21_X1.gbr"
-
-	};
-
 	@Test
-	public void drawSamples() {
-		File dir = new File("sampleImages");
-		for (String fileName : fileNames) {
-			System.out.println("Rendering " + fileName);
+	public void drawSamples() throws IOException {
+		Files.walk(Paths.get("samples")).filter(x -> x.toString().endsWith(".gbr")).forEach(this::drawAndCompare);
+	}
+
+	void drawAndCompare(Path path) {
+		try {
+			System.out.println("Rendering " + path);
 			WarningCollector warningCollector = new WarningCollector();
-			String gbrContent = TestUtils.readResource("/examples20201015/" + fileName);
+
+			String gbrContent = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
 			var boundsCollector = new GerberBoundingBoxCollector(warningCollector);
 			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
@@ -41,8 +37,15 @@ public class DrawSamplesTest {
 
 			warningCollector.warnings.clear();
 
-			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, bounds.getWidth() + 2,
-					bounds.getHeight() + 2, 1 - bounds.getMinX(), 1 - bounds.getMinY(), 1);
+			double widthMM = bounds.getWidth() + 2;
+			double heightMM = bounds.getHeight() + 2;
+
+			double maxD = Math.max(widthMM, heightMM);
+
+			double pointsPerMM = Math.pow(10, Math.floor(Math.log10(10000 / maxD)));
+
+			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, widthMM, heightMM,
+					1 - bounds.getMinX(), 1 - bounds.getMinY(), pointsPerMM);
 			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)), gbrContent).file();
 
@@ -54,9 +57,11 @@ public class DrawSamplesTest {
 				System.out.println("Review Image");
 			}
 
-			String outName = fileName.substring(0, fileName.length() - 3) + "png";
-			rasterizer.save(new File(dir, outName));
-
+			String pathName = path.toString();
+			String outName = pathName.substring(0, pathName.length() - 3) + "png";
+			rasterizer.save(new File(outName));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

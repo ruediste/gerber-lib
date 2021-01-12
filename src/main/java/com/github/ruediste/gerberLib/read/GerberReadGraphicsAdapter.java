@@ -2,7 +2,9 @@ package com.github.ruediste.gerberLib.read;
 
 import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.stream.Stream;
 import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.linAlg.CoordinateLengthUnit;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
+import com.github.ruediste.gerberLib.linAlg.CoordinateTransformation;
 import com.github.ruediste.gerberLib.linAlg.CoordinateVector;
 import com.github.ruediste.gerberLib.parser.GerberCoordinateFormatSpecification;
 import com.github.ruediste.gerberLib.parser.GerberMacroBodyParser.MacroBody;
@@ -26,7 +29,7 @@ import com.github.ruediste.gerberLib.parser.InterpolationMode;
  * primitives.
  *
  */
-public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
+public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 
 	public Map<Integer, ApertureDefinition> aperturesDictionary = new HashMap<>();
 
@@ -119,6 +122,13 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		return state.unit.convertTo(CoordinateLengthUnit.MM, value);
 	}
 
+	private <T> T orFallback(T value, T fallback) {
+		if (value != null)
+			return value;
+		else
+			return fallback;
+	}
+
 	@Override
 	public void interpolateOperation(InputPosition pos, String x, String y, String iStr, String jStr) {
 
@@ -138,27 +148,36 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		if (y != null)
 			targetY = parseCoordinateY(y);
 
-		Double i = parseCoordinateX(iStr);
-		if (i == null)
-			i = 0.;
-		Double j = parseCoordinateX(jStr);
-		if (j == null)
-			j = 0.;
+		Double i = orFallback(parseCoordinateX(iStr), 0.);
+		Double j = orFallback(parseCoordinateX(jStr), 0.);
 
-		InterpolateParameter params = new InterpolateParameter(pos, state, CoordinatePoint.of(targetX, targetY),
-				CoordinateVector.of(i, j));
+		ApertureDefinition aperture = state.currentAperture;
+		CoordinatePoint current = state.current();
+		CoordinatePoint target = CoordinatePoint.of(targetX, targetY);
+		InterpolationMode interpolationMode = state.interpolationMode;
+		QuadrantMode quadrantMode = state.quadrantMode;
+		Polarity polarity = state.polarity;
 		if (regionActive) {
 			if (!regionContourStarted) {
 				regionContourStarted = true;
-				callHandler(() -> handler.regionStartContour(pos, state));
+				callHandler(() -> handler.regionStartContour(pos));
 			}
-			callHandler(() -> handler.regionInterpolate(params));
+			callHandler(() -> {
+				InterpolateParameter params = new InterpolateParameter(pos, state.blockTransformations.peek(), current,
+						target, CoordinateVector.of(i, j), aperture, interpolationMode, quadrantMode, polarity);
+				handler.regionInterpolate(params);
+			});
 		} else {
-			if (state.currentAperture == null) {
+			if (aperture == null) {
 				warningCollector.add(pos, "No aperture defined, not drawing");
 				return;
 			}
-			callHandler(() -> handler.interpolate(params));
+			// TODO: scaling
+			callHandler(() -> {
+				InterpolateParameter params = new InterpolateParameter(pos, state.blockTransformations.peek(), current,
+						target, CoordinateVector.of(i, j), aperture, interpolationMode, quadrantMode, polarity);
+				handler.interpolate(params);
+			});
 		}
 		state.currentX = targetX;
 		state.currentY = targetY;
@@ -167,7 +186,7 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 	@Override
 	public void moveOperation(InputPosition pos, String x, String y) {
 		if (regionContourStarted) {
-			callHandler(() -> handler.regionEndContour(pos, state));
+			callHandler(() -> handler.regionEndContour(pos));
 			regionContourStarted = false;
 		}
 		if (x != null)
@@ -202,11 +221,24 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		if (y != null)
 			state.currentY = parseCoordinateY(y);
 
-		if (state.currentAperture.handlerCalls != null) {
-			state.currentAperture.handlerCalls.forEach(Runnable::run);
-		} else {
-			callHandler(() -> handler.flash(pos, state));
-		}
+		var current = state.current();
+		ApertureDefinition aperture = state.currentAperture;
+		CoordinateTransformation apertureTransformation = state.apertureTransformation.copy();
+		Polarity polarity = state.polarity;
+		callHandler(() -> {
+			CoordinateTransformation t = state.blockTransformations.peek().copy();
+			t.translate(current);
+			t.concatenate(apertureTransformation);
+			if (aperture.handlerCalls != null) {
+				System.out.println(
+						"Flash D" + aperture.nr + " current: " + current + " polarity: " + polarity + " trans: " + t);
+				state.blockTransformations.push(t);
+				aperture.handlerCalls.forEach(Runnable::run);
+				state.blockTransformations.pop();
+			} else {
+				handler.flash(pos, t, aperture, polarity);
+			}
+		});
 	}
 
 	@Override
@@ -214,7 +246,7 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		if (regionActive)
 			warningCollector.add(pos, "region already started");
 		regionActive = true;
-		callHandler(() -> handler.regionBegin(pos, state));
+		callHandler(() -> handler.regionBegin(pos));
 	}
 
 	@Override
@@ -223,10 +255,10 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 			warningCollector.add(pos, "no active region");
 		if (regionContourStarted) {
 			regionContourStarted = false;
-			callHandler(() -> handler.regionEndContour(pos, state));
+			callHandler(() -> handler.regionEndContour(pos));
 		}
 		regionActive = false;
-		callHandler(() -> handler.regionEnd(pos, state));
+		callHandler(() -> handler.regionEnd(pos, state.polarity));
 	}
 
 	@Override
@@ -243,20 +275,24 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 			warningCollector.add(pos, "Unknown polarity " + polarity);
 	}
 
+	CoordinateTransformation blockApertureTransformation;
 	int blockApertureDepth;
-	List<Runnable> handlerCalls = new ArrayList<>();
+	Deque<List<Runnable>> handlerCalls = new ArrayDeque<>();
 
 	private void callHandler(Runnable call) {
 		if (blockApertureDepth == 0)
 			call.run();
 		else {
-			handlerCalls.add(call);
+			handlerCalls.peek().add(call);
 		}
 	}
 
 	@Override
 	public void beginBlockAperture(int nr) {
 		blockApertureDepth++;
+		handlerCalls.push(new ArrayList<>());
+		state.currentX = null;
+		state.currentY = null;
 	}
 
 	@Override
@@ -264,8 +300,43 @@ public class GerberReadGraphicsAdapter extends GerberParsingEventHandler {
 		blockApertureDepth--;
 		ApertureDefinition def = new ApertureDefinition();
 		def.nr = nr;
-		def.handlerCalls = handlerCalls;
-		handlerCalls = new ArrayList<>();
+		def.handlerCalls = handlerCalls.pop();
 		aperturesDictionary.put(def.nr, def);
+		state.currentX = null;
+		state.currentY = null;
+	}
+
+	@Override
+	public void comment(InputPosition pos, String string) {
+		// NOP
+	}
+
+	@Override
+	public void fileAttribute(InputPosition pos, String name, List<String> attributes) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void endOfFile(InputPosition pos) {
+		// NOP
+	}
+
+	@Override
+	public void loadMirroring(InputPosition pos, String mirroring) {
+		state.mirroring = mirroring;
+		state.updateApertureTransformation();
+	}
+
+	@Override
+	public void loadRotation(InputPosition pos, String rotation) {
+		state.rotation = Double.parseDouble(rotation);
+		state.updateApertureTransformation();
+	}
+
+	@Override
+	public void loadScaling(InputPosition pos, String scaling) {
+		state.scaling = Double.parseDouble(scaling);
+		state.updateApertureTransformation();
 	}
 }

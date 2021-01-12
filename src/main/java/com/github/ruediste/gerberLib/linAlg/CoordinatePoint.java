@@ -9,6 +9,10 @@ public class CoordinatePoint {
 		return new CoordinatePoint(x, y);
 	}
 
+	public static CoordinatePoint ofAngular(double r, double angle) {
+		return of(r * Math.cos(angle * Math.PI / 180), r * (Math.sin(angle * Math.PI / 180)));
+	}
+
 	public CoordinatePoint(double x, double y) {
 		this.x = x;
 		this.y = y;

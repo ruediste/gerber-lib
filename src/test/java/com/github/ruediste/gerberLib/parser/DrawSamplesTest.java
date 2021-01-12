@@ -13,10 +13,18 @@ import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricP
 
 public class DrawSamplesTest {
 
-	private static String[] fileNames = new String[] { "2-13-1_Two_square_boxes.gbr",
-			"2-13-2_Polarities_and_Apertures.gbr", "4-11-6_Block_with_different_orientations.gbr",
-			"4-6-4_Nested_blocks.gbr", "6-1-6-2_A_drill_file.gbr", "sample_macro.gbr", "sample_macro_X1.gbr",
-			"SMD_prim_20.gbr", "SMD_prim_20_X1.gbr", "SMD_prim_21.gbr", "SMD_prim_21_X1.gbr" };
+	private static String[] fileNames = new String[] {
+
+//			"2-13-1_Two_square_boxes.gbr", "2-13-2_Polarities_and_Apertures.gbr",
+//			"4-11-6_Block_with_different_orientations.gbr",
+
+			"4-6-4_Nested_blocks.gbr",
+
+//			"6-1-6-2_A_drill_file.gbr", "sample_macro.gbr", "sample_macro_X1.gbr",
+
+//			"SMD_prim_20.gbr", "SMD_prim_20_X1.gbr", "SMD_prim_21.gbr", "SMD_prim_21_X1.gbr"
+
+	};
 
 	@Test
 	public void drawSamples() {
@@ -26,7 +34,7 @@ public class DrawSamplesTest {
 			WarningCollector warningCollector = new WarningCollector();
 			String gbrContent = TestUtils.readResource("/examples20201015/" + fileName);
 
-			var boundsCollector = new GerberBoundingBoxCollector();
+			var boundsCollector = new GerberBoundingBoxCollector(warningCollector);
 			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, boundsCollector)), gbrContent).file();
 			Rectangle2D bounds = boundsCollector.getBounds();
@@ -34,7 +42,7 @@ public class DrawSamplesTest {
 			warningCollector.warnings.clear();
 
 			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, bounds.getWidth() + 2,
-					bounds.getHeight() + 2, 1 - bounds.getMinX(), 1 - bounds.getMinY(), 100);
+					bounds.getHeight() + 2, 1 - bounds.getMinX(), 1 - bounds.getMinY(), 1);
 			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)), gbrContent).file();
 

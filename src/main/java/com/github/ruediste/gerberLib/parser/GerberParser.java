@@ -33,7 +33,7 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 	}
 
 	void compound_statement() {
-		choice(this::region_statement, this::SR_statement, this::AB_statement, this::unknownStatement);
+		choice(this::region_statement, this::SR_statement, this::apeertureBlock_AB_statement, this::unknownStatement);
 	}
 
 	private void endOfFile() {
@@ -53,10 +53,11 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 	}
 
 	void in_block_statement() {
-		choice(this::single_statement, this::region_statement, this::AB_statement);
+		eatNewLines();
+		choice(this::single_statement, this::region_statement, this::apeertureBlock_AB_statement);
 	}
 
-	void AB_statement() {
+	void apeertureBlock_AB_statement() {
 		next("%AB");
 		next("D");
 		var nr = aperture_nr();
@@ -99,15 +100,30 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 	}
 
 	void LM() {
-		ctx.throwException("todo: LM");
+		InputPosition pos = ctx.copyPos();
+		next("%LM");
+		ctx.limitBacktracking();
+		var mirroring = choice(() -> next("N"), () -> next("XY"), () -> next("X"), () -> next("Y"));
+		next("*%");
+		handler.loadMirroring(pos, mirroring);
 	}
 
 	void LR() {
-		ctx.throwException("todo: LR");
+		InputPosition pos = ctx.copyPos();
+		next("%LR");
+		ctx.limitBacktracking();
+		var rotation = decimal();
+		next("*%");
+		handler.loadRotation(pos, rotation);
 	}
 
 	void LS() {
-		ctx.throwException("todo: LS");
+		InputPosition pos = ctx.copyPos();
+		next("%LS");
+		ctx.limitBacktracking();
+		var scaling = decimal();
+		next("*%");
+		handler.loadScaling(pos, scaling);
 	}
 
 	void coordinate_command() {

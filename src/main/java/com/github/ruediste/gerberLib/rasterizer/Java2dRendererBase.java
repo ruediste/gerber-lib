@@ -1,7 +1,6 @@
 package com.github.ruediste.gerberLib.rasterizer;
 
 import java.awt.geom.Arc2D;
-import java.awt.geom.Area;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -14,7 +13,7 @@ import com.github.ruediste.gerberLib.readGeometricPrimitive.GerberReadGeometricP
 
 public abstract class Java2dRendererBase implements GerberReadGeometricPrimitiveEventHandler {
 
-	private static final boolean print = true;
+	private static final boolean print = false;
 
 	protected WarningCollector warningCollector;
 
@@ -22,13 +21,7 @@ public abstract class Java2dRendererBase implements GerberReadGeometricPrimitive
 		this.warningCollector = warningCollector;
 	}
 
-	protected Area currentArea;
 	protected Path2D currentPath;
-
-	@Override
-	public void beginObject(InputPosition pos) {
-		currentArea = new Area();
-	}
 
 	@Override
 	public void beginPath(InputPosition pos) {
@@ -53,23 +46,6 @@ public abstract class Java2dRendererBase implements GerberReadGeometricPrimitive
 		currentPath.append(
 				new Arc2D.Double(p.x, p.y, w, h, -angSt, -angExt, Arc2D.OPEN).getPathIterator(transformation.inner),
 				true);
-	}
-
-	@Override
-	public void endPath(InputPosition pos, Exposure exposure) {
-
-		switch (exposure) {
-		case OFF:
-			currentArea.subtract(new Area(currentPath));
-			break;
-		case ON:
-			currentArea.add(new Area(currentPath));
-			break;
-		default:
-			throw new UnsupportedOperationException();
-		}
-
-		currentPath = null;
 	}
 
 }

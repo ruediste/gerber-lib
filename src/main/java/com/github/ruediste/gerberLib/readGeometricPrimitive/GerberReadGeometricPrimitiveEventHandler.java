@@ -9,7 +9,7 @@ public interface GerberReadGeometricPrimitiveEventHandler {
 
 	enum Exposure {
 		/**
-		 * Add a path the the current object
+		 * Add a path the the current path
 		 */
 		ON,
 

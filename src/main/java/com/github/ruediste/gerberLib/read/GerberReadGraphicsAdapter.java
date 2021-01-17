@@ -305,9 +305,12 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 		state.currentY = null;
 	}
 
+	CoordinatePoint stepAndRepeatstartPoint;
+
 	@Override
 	public void beginStepAndRepeat(InputPosition pos) {
 		blockDepth++;
+		stepAndRepeatstartPoint = state.current();
 		handlerCalls.push(new ArrayList<>());
 	}
 
@@ -323,12 +326,13 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 		var yRepeats = Integer.parseInt(yRepeatsStr);
 		var xDistance = Double.parseDouble(xDistanceStr);
 		var yDistance = Double.parseDouble(yDistanceStr);
-		var current = state.current();
 
+		System.out.println("SR: " + pos + " " + stepAndRepeatstartPoint + " " + xRepeats + " " + yRepeats + " "
+				+ xDistance + " " + yDistance);
 		for (int x = 0; x < xRepeats; x++) {
 			for (int y = 0; y < yRepeats; y++) {
 				CoordinateTransformation t = state.blockTransformations.peek().copy();
-				t.translate(current);
+				// t.translate(stepAndRepeatstartPoint);
 				t.translate(CoordinatePoint.of(x * xDistance, y * yDistance));
 				state.blockTransformations.push(t);
 				handlerCalls.forEach(Runnable::run);

@@ -59,21 +59,23 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 		InterpolationMode interpolationMode = params.interpolationMode;
 		if (interpolationMode == InterpolationMode.LINEAR) {
-			var normal = start.vectorTo(end).normal().normalize();
-			CoordinateVector offset = normal.scale(width2);
-			var p1 = start.plus(offset);
-			var p2 = end.plus(offset);
-			var p3 = end.minus(offset);
-			var p4 = start.minus(offset);
+			if (!start.equals(end)) {
+				var normal = start.vectorTo(end).normal().normalize();
+				CoordinateVector offset = normal.scale(width2);
+				var p1 = start.plus(offset);
+				var p2 = end.plus(offset);
+				var p3 = end.minus(offset);
+				var p4 = start.minus(offset);
 
-			handler.beginPath(pos);
-			handler.addLine(pos, params.transformation, p1, p2);
-			var corner = end.minus(CoordinateVector.of(width2, width2));
-			handler.addArc(pos, params.transformation, corner, width, width, offset.angle(), -180);
-			handler.addLine(pos, params.transformation, p3, p4);
-			corner = start.minus(CoordinateVector.of(width2, width2));
-			handler.addArc(pos, params.transformation, corner, width, width, offset.negate().angle(), -180);
-			handler.endPath(pos, Exposure.ON);
+				handler.beginPath(pos);
+				handler.addLine(pos, params.transformation, p1, p2);
+				var corner = end.minus(CoordinateVector.of(width2, width2));
+				handler.addArc(pos, params.transformation, corner, width, width, offset.angle(), -180);
+				handler.addLine(pos, params.transformation, p3, p4);
+				corner = start.minus(CoordinateVector.of(width2, width2));
+				handler.addArc(pos, params.transformation, corner, width, width, offset.negate().angle(), -180);
+				handler.endPath(pos, Exposure.ON);
+			}
 		} else if (interpolationMode == InterpolationMode.CIRCULAR_CLOCKWISE
 				|| interpolationMode == InterpolationMode.CIRCULAR_COUNTER_CLOCKWISE) {
 			// circular interpolation
@@ -310,16 +312,16 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 			for (int i = 0; i < parameters.size(); i++) {
 				evaluator.set(i + 1, parameters.get(i));
 			}
-			System.out.println("Values " + evaluator);
+			// System.out.println("Values " + evaluator);
 			for (var statement : aperture.template.body.statements) {
-				System.out.println("Flashing " + statement);
+				// System.out.println("Flashing " + statement);
 				statement.accept(new MacroStatementVisitor() {
 
 					@Override
 					public void visit(MacroVariableDefinitionStatement macroVariableDefinitionStatement) {
 						Double value = evaluator.evaluate(macroVariableDefinitionStatement.exp);
 						evaluator.set(macroVariableDefinitionStatement.variableNr, value);
-						System.out.println("New Values " + evaluator);
+						// System.out.println("New Values " + evaluator);
 					}
 
 					@Override

@@ -30,6 +30,11 @@
             <version>3.6.28</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.locationtech.jts</groupId>
+            <artifactId>jts-core</artifactId>
+            <version>1.18.0</version>
+        </dependency>
     </dependencies>
     <build>
     </build>

@@ -2,6 +2,7 @@ package com.github.ruediste.gerberLib.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.github.ruediste.gerberLib.read.QuadrantMode;
 
@@ -307,7 +308,61 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 	}
 
 	void operation() {
-		choice(this::interpolateOperation_D01, this::moveOperation_D02, this::flashOperation_D03);
+		var pos = ctx.copyPos();
+		int cp = nextCp();
+
+		String x;
+		if (cp == 'X') {
+			x = coordinate();
+			cp = nextCp();
+		} else
+			x = null;
+
+		String y;
+		if (cp == 'Y') {
+			y = coordinate();
+			cp = nextCp();
+		} else
+			y = null;
+
+		String i;
+		if (cp == 'I') {
+			i = coordinate();
+			cp = nextCp();
+		} else
+			i = null;
+
+		String j;
+		if (cp == 'J') {
+			j = coordinate();
+			cp = nextCp();
+		} else
+			j = null;
+
+		Set<String> expectedSet = Set.of("D01*", "D02*", "D03*");
+		if (cp != 'D') {
+			throw ctx.throwException(expectedSet);
+		}
+		if (nextCp() != '0')
+			throw ctx.throwException(expectedSet);
+
+		cp = nextCp();
+		if (nextCp() != '*')
+			throw ctx.throwException(expectedSet);
+		switch (cp) {
+		case '1':
+			handler.interpolateOperation(pos, x, y, i, j);
+			break;
+		case '2':
+			handler.moveOperation(pos, x, y);
+			break;
+		case '3':
+			handler.flashOperation(pos, x, y);
+			break;
+		default:
+			ctx.throwException(expectedSet);
+		}
+
 	}
 
 	void interpolateOperation_D01() {
@@ -381,7 +436,26 @@ public class GerberParser extends ParserBase<GerberParsingState> {
 
 	String coordinate() {
 		// /[+-]{0,1}[0-9]+/;
-		return join(sequence(() -> optional(() -> any("+-")), () -> join(oneOrMore(() -> any(isDigit())))));
+		// return join(sequence(() -> optional(() -> any("+-")), () -> join(oneOrMore(()
+		// -> any(isDigit())))));
+		StringBuilder sb = new StringBuilder();
+		int cp = peekCp();
+		if (cp == '+' || cp == '-') {
+			sb.appendCodePoint(cp);
+			nextCp();
+			cp = peekCp();
+		}
+
+		if (cp < '0' || cp > '9')
+			ctx.throwException("[0-9]");
+		while (true) {
+			if (cp < '0' || cp > '9')
+				break;
+			sb.appendCodePoint(cp);
+			nextCp();
+			cp = peekCp();
+		}
+		return sb.toString();
 	}
 
 	String name() {

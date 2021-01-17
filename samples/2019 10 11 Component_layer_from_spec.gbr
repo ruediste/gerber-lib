@@ -1,0 +1,42 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,(5.99.0-190-g0fd48dd4f-dirty)*%
+%TF.CreationDate,2019-10-02T18:52:55+02:00*%
+%TF.ProjectId,kit-dev-coldfire-xilinx_5213,6b69742d-6465-4762-9d63-6f6c64666972,2*%
+%TF.SameCoordinates,PX3e22018PY8d89728*%
+%TF.FileFunction,Component,L1,Top*%
+%TF.FilePolarity,Positive*%
+%FSLAX46Y46*%
+%MOMM*%
+%LPD*%
+G04 Aperture begin list*
+%TA.AperFunction,ComponentMain*%
+%ADD10C,0.3*%
+%TA.AperFunction,ComponentOutline,Courtyard*%
+%ADD11C,0.1*%
+%TA.AperFunction,ComponentPin*%
+%ADD12P,0.36X4X0.0*%
+%ADD13C,0*%
+%TD*%
+G04 Aperture end list*
+G04 Begin component info*
+D10*
+%TO.C,R301*%
+%TO.CFtp,R_0805_2012Metric*%
+%TO.CVal,4K7*%
+%TO.CMnt,SMD*%
+%TO.CRot,-90*%
+X218250000Y-73000000D03*
+D11*
+X219250000Y-71310000D02*
+X217250000Y-71310000D01*
+X217250000Y-74690000D01*
+X219250000Y-74690000D01*
+X219250000Y-71310000D01*
+D12*
+%TO.P,R301,1*%
+X218250000Y-72045000D03*
+D13*
+%TO.P,R301,2*%
+X218250000Y-73955000D03*
+%TD*%
+G04 Next component*
+M02*

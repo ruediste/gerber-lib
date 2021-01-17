@@ -13,8 +13,6 @@ public interface GerberParsingEventHandler {
 
 	public void unit(InputPosition pos, String unit);
 
-	public void fileAttribute(InputPosition pos, String name, List<String> attributes);
-
 	public void loadPolarity(InputPosition pos, String polarity);
 
 	public void apertureDefinition(InputPosition pos, int number, String template, List<String> parameters);
@@ -55,5 +53,13 @@ public interface GerberParsingEventHandler {
 
 	public void endStepAndRepeat(InputPosition pos, String xRepeats, String yRepeats, String xDistance,
 			String yDistance);
+
+	public void fileAttribute(InputPosition pos, String name, List<String> attributes);
+
+	public void objectAttribute(InputPosition pos, String name, List<String> attributes);
+
+	public void deleteAttribute(InputPosition pos, String name);
+
+	public void apertureAttribute(InputPosition pos, String name, List<String> attributes);
 
 }

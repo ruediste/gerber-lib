@@ -6,14 +6,21 @@ import java.util.Set;
 public class ParsingContext<T extends ParsingState<T>> {
 
 	public T state;
-	public String input;
-	public ParseException latestException;
+	final public String input;
+
+	final private ParseException singletonParseException;
+
+	private InputPosition latestInputPosition;
+	private Set<String> latestExpected;
 
 	public int backtrackingLimit = -1;
 
 	public ParsingContext(String input, T initialState) {
 		this.input = input;
 		this.state = initialState;
+		singletonParseException = new ParseException(
+				Set.of("use ParsingContext.throwNiceParseException() for a proper parse error"), new InputPosition(),
+				input);
 	}
 
 	public boolean isEof() {
@@ -44,32 +51,44 @@ public class ParsingContext<T extends ParsingState<T>> {
 		return throwException(expected, state.pos);
 	}
 
+	public void expected(Set<String> expected) {
+		expected(expected, state.pos);
+	}
+
 	public ParseException throwException(Set<String> expected, InputPosition pos) {
-		if (latestException == null) {
-			latestException = new ParseException(expected, pos.copy(), input);
-			throw latestException;
+		expected(expected, pos);
+		throw singletonParseException;
+	}
+
+	public void expected(Set<String> expected, InputPosition pos) {
+		if (latestInputPosition == null || pos.isAfter(latestInputPosition)) {
+			latestInputPosition = pos.copy();
+			latestExpected = new HashSet<>(expected);
+			return;
 		}
-		if (pos.isAfter(latestException.pos)) {
-			latestException = new ParseException(expected, pos.copy(), input);
-			throw latestException;
-		}
-		if (pos.isBefore(latestException.pos))
-			throw latestException;
-		if (!expected.stream().allMatch(latestException.expected::contains)) {
-			Set<String> set = new HashSet<String>(latestException.expected);
-			set.addAll(expected);
-			latestException = new ParseException(set, pos.copy(), input);
-			throw latestException;
-		}
-		throw latestException;
+		if (pos.isBefore(latestInputPosition))
+			return;
+		latestExpected.addAll(expected);
 	}
 
 	public ParseException throwException(String expected) {
 		return throwException(expected, state.pos);
 	}
 
+	public ParseException throwException() {
+		throw singletonParseException;
+	}
+
+	public void expected(String expected) {
+		expected(expected, state.pos);
+	}
+
 	public ParseException throwException(String expected, InputPosition pos) {
 		return throwException(Set.of(expected), pos);
+	}
+
+	public void expected(String expected, InputPosition pos) {
+		expected(Set.of(expected), pos);
 	}
 
 	public InputPosition copyPos() {
@@ -78,5 +97,15 @@ public class ParsingContext<T extends ParsingState<T>> {
 
 	public void limitBacktracking() {
 		backtrackingLimit = state.pos.inputIndex;
+	}
+
+	public void throwNiceParseException(Runnable r) {
+		try {
+			r.run();
+		} catch (ParseException e) {
+			if (latestInputPosition == null)
+				new RuntimeException("Parse exception thrown without calling ParsingContext.throwException()");
+			throw new ParseException(latestExpected, latestInputPosition, input);
+		}
 	}
 }

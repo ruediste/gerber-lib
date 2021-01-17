@@ -83,19 +83,38 @@ public class GerberRasterizer extends Java2dRendererBase {
 		}
 	}
 
-	public boolean isEqualTo(File outFile) {
+	public BufferedImage compareTo(File outFile) {
 		try {
 			BufferedImage reference = ImageIO.read(outFile);
-			if (image.getWidth() != reference.getWidth() || image.getHeight() != reference.getHeight()) {
-				return false;
-			}
-			for (int x = 0; x < image.getWidth(); x++) {
-				for (int y = 0; y < image.getHeight(); y++) {
-					if (image.getRGB(x, y) != reference.getRGB(x, y))
-						return false;
+			int maxWidth = Math.max(image.getWidth(), reference.getWidth());
+			int maxHeight = Math.max(image.getHeight(), reference.getHeight());
+			BufferedImage diff = new BufferedImage(maxWidth, maxHeight, BufferedImage.TYPE_INT_RGB);
+			boolean diffFound = false;
+			for (int x = 0; x < maxWidth; x++) {
+				for (int y = 0; y < maxHeight; y++) {
+					if (x >= image.getWidth() || x >= reference.getWidth() || y >= image.getHeight()
+							|| y >= reference.getHeight()) {
+						diff.setRGB(x, y, 0xff);
+						diffFound = true;
+						continue;
+					}
+
+					int imageRgb = image.getRGB(x, y);
+					if (imageRgb != reference.getRGB(x, y)) {
+						diffFound = true;
+						if (imageRgb == 0) {
+							diff.setRGB(x, y, 0xff0000);
+						} else
+							diff.setRGB(x, y, 0x00ff00);
+					} else
+						diff.setRGB(x, y, imageRgb);
+
 				}
 			}
-			return true;
+			if (diffFound)
+				return diff;
+			else
+				return null;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

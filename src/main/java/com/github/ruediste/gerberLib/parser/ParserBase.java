@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.toSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -34,7 +35,33 @@ public class ParserBase<S extends ParsingState<S>> {
 				ctx.state = startState.copy();
 			}
 		}
-		throw ctx.latestException;
+		throw ctx.throwException("any choice");
+	}
+
+	/**
+	 * Variant of {@link #choice(Runnable...)} supporting non throwable behavior.
+	 * Choices can still throw parse exceptions, in which false is returned as well
+	 */
+	@SafeVarargs
+	final protected boolean choiceNT(BooleanSupplier... choices) {
+		if (choices.length == 0) {
+			ctx.expected("any choice");
+			return false;
+		}
+
+		S startState = ctx.state.copy();
+		for (BooleanSupplier choice : choices) {
+			try {
+				if (choice.getAsBoolean())
+					return true;
+			} catch (ParseException e) {
+				// swallow
+			}
+			if (startState.pos.inputIndex < ctx.backtrackingLimit)
+				return false;
+			ctx.state = startState.copy();
+		}
+		return false;
 	}
 
 	@SafeVarargs
@@ -55,7 +82,7 @@ public class ParserBase<S extends ParsingState<S>> {
 				ctx.state = startState.copy();
 			}
 		}
-		throw ctx.latestException;
+		throw ctx.throwException("any choice");
 	}
 
 	protected void optional(Runnable branch) {
@@ -180,25 +207,35 @@ public class ParserBase<S extends ParsingState<S>> {
 	 * @return
 	 */
 	protected String next(String expected) {
+		if (nextNT(expected))
+			return expected;
+		throw ctx.throwException();
+	}
+
+	protected boolean nextNT(String expected) {
 		eatNewLines();
 		S startState = ctx.state.copy();
-		expected.codePoints().forEach(cp -> {
+		for (int idx = 0; idx < expected.length(); idx = expected.offsetByCodePoints(idx, 1)) {
+			int cp = expected.codePointAt(idx);
+
 			while (true) {
 				if (ctx.isEof()) {
 					ctx.state = startState;
-					ctx.throwException(expected);
+					ctx.expected(expected);
+					return false;
 				}
 				int actual = ctx.nextCp();
 				if (actual == '\r' || actual == '\n')
 					continue;
 				if (actual != cp) {
 					ctx.state = startState;
-					ctx.throwException(expected);
+					ctx.expected(expected);
+					return false;
 				}
 				break;
 			}
-		});
-		return expected;
+		}
+		return true;
 	}
 
 	protected String nextRaw(String expected) {

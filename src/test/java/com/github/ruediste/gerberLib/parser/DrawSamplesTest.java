@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +31,7 @@ public class DrawSamplesTest {
 
 				.filter(x -> x.toString().endsWith(".gbr"))
 
-				.filter(x -> x.toString().contains("dvk-mx8m-bsb-B_Cu.gbr"))
+				// .filter(x -> x.toString().contains("dvk-mx8m-bsb-B_Fab"))
 
 				.flatMap(p -> drawAndCompare(p).stream()).collect(toList());
 		if (!errors.isEmpty()) {
@@ -58,7 +61,8 @@ public class DrawSamplesTest {
 
 			double maxD = Math.max(widthMM, heightMM);
 
-			double pointsPerMM = Math.pow(10, Math.floor(Math.log10(10000 / maxD)));
+//			double pointsPerMM = Math.pow(10, Math.floor(Math.log10(10000 / maxD)));
+			double pointsPerMM = 5000 / maxD;
 
 			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, widthMM + 10 / pointsPerMM,
 					heightMM + 10 / pointsPerMM, 5 / pointsPerMM - bounds.getMinX(), 5 / pointsPerMM - bounds.getMinY(),
@@ -78,11 +82,13 @@ public class DrawSamplesTest {
 			File outFile = new File(pathName.substring(0, pathName.length() - 3) + "png");
 
 			if (outFile.exists()) {
-				if (rasterizer.isEqualTo(outFile)) {
+				BufferedImage diff = rasterizer.compareTo(outFile);
+				if (diff == null) {
 					System.out.println("Rendered image matches reference image");
 				} else {
 					System.out.println("Difference found");
 					rasterizer.save(new File(pathName.substring(0, pathName.length() - 3) + "actual.png"));
+					ImageIO.write(diff, "png", new File(pathName.substring(0, pathName.length() - 3) + "diff.png"));
 					return List.of(path + ": Difference found");
 				}
 			} else {

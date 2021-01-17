@@ -59,7 +59,7 @@ public class GerberReadGeometricPrimitiveAdapter extends GerberReadGraphicsEvent
 
 		InterpolationMode interpolationMode = params.interpolationMode;
 		if (interpolationMode == InterpolationMode.LINEAR) {
-			if (!start.equals(end)) {
+			if (!start.equals(end)) { // todo: handle properly
 				var normal = start.vectorTo(end).normal().normalize();
 				CoordinateVector offset = normal.scale(width2);
 				var p1 = start.plus(offset);

@@ -327,8 +327,6 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 		var xDistance = Double.parseDouble(xDistanceStr);
 		var yDistance = Double.parseDouble(yDistanceStr);
 
-		System.out.println("SR: " + pos + " " + stepAndRepeatstartPoint + " " + xRepeats + " " + yRepeats + " "
-				+ xDistance + " " + yDistance);
 		for (int x = 0; x < xRepeats; x++) {
 			for (int y = 0; y < yRepeats; y++) {
 				CoordinateTransformation t = state.blockTransformations.peek().copy();
@@ -345,12 +343,6 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 	@Override
 	public void comment(InputPosition pos, String string) {
 		// NOP
-	}
-
-	@Override
-	public void fileAttribute(InputPosition pos, String name, List<String> attributes) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -374,5 +366,29 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 	public void loadScaling(InputPosition pos, String scaling) {
 		state.scaling = Double.parseDouble(scaling);
 		state.updateApertureTransformation();
+	}
+
+	@Override
+	public void fileAttribute(InputPosition pos, String name, List<String> attributes) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void objectAttribute(InputPosition pos, String name, List<String> attributes) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void deleteAttribute(InputPosition pos, String name) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void apertureAttribute(InputPosition pos, String name, List<String> attributes) {
+		// TODO Auto-generated method stub
+
 	}
 }

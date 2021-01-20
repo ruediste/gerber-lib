@@ -5,7 +5,6 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 
-import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.linAlg.CoordinatePoint;
 import com.github.ruediste.gerberLib.linAlg.CoordinateTransformation;
 import com.github.ruediste.gerberLib.parser.InputPosition;
@@ -15,10 +14,7 @@ public abstract class Java2dRendererBase implements GerberReadGeometricPrimitive
 
 	private static final boolean print = false;
 
-	protected WarningCollector warningCollector;
-
-	public Java2dRendererBase(WarningCollector warningCollector) {
-		this.warningCollector = warningCollector;
+	public Java2dRendererBase() {
 	}
 
 	protected Path2D currentPath;

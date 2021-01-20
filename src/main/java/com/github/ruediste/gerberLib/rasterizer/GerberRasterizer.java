@@ -9,7 +9,6 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import com.github.ruediste.gerberLib.WarningCollector;
 import com.github.ruediste.gerberLib.parser.InputPosition;
 import com.github.ruediste.gerberLib.read.Polarity;
 
@@ -23,10 +22,7 @@ public class GerberRasterizer extends Java2dRendererBase {
 	private double pointsPerMM;
 	private Graphics2D currentImageGraphics;
 
-	public GerberRasterizer(WarningCollector warningCollector, double widthMM, double heightMM, double offsetXMM,
-			double offsetYMM, double pointsPerMM) {
-		super(warningCollector);
-		this.warningCollector = warningCollector;
+	public GerberRasterizer(double widthMM, double heightMM, double offsetXMM, double offsetYMM, double pointsPerMM) {
 		this.offsetXMM = offsetXMM;
 		this.offsetYMM = offsetYMM;
 		this.pointsPerMM = pointsPerMM;

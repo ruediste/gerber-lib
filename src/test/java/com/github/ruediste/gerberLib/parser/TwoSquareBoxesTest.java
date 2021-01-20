@@ -53,7 +53,7 @@ public class TwoSquareBoxesTest {
 	@Test
 	public void testDraw() {
 		WarningCollector warningCollector = new WarningCollector();
-		GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, 15, 7, 1, 1, 100);
+		GerberRasterizer rasterizer = new GerberRasterizer(15, 7, 1, 1, 100);
 		GerberParser parser = new GerberParser(
 				new GerberReadGraphicsAdapter(warningCollector,
 						new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)),

@@ -64,9 +64,8 @@ public class DrawSamplesTest {
 //			double pointsPerMM = Math.pow(10, Math.floor(Math.log10(10000 / maxD)));
 			double pointsPerMM = 5000 / maxD;
 
-			GerberRasterizer rasterizer = new GerberRasterizer(warningCollector, widthMM + 10 / pointsPerMM,
-					heightMM + 10 / pointsPerMM, 5 / pointsPerMM - bounds.getMinX(), 5 / pointsPerMM - bounds.getMinY(),
-					pointsPerMM);
+			GerberRasterizer rasterizer = new GerberRasterizer(widthMM + 10 / pointsPerMM, heightMM + 10 / pointsPerMM,
+					5 / pointsPerMM - bounds.getMinX(), 5 / pointsPerMM - bounds.getMinY(), pointsPerMM);
 			new GerberParser(new GerberReadGraphicsAdapter(warningCollector,
 					new GerberReadGeometricPrimitiveAdapter(warningCollector, rasterizer)), gbrContent).file();
 

@@ -89,10 +89,18 @@ public class JtsAdapter extends Java2dRendererBase {
 		if (currentObject != null) {
 			if (polarity == Polarity.DARK) {
 				for (var g : currentObject) {
-					imageTree.insert(g.getEnvelopeInternal(), new GeometryRef(g));
+					if (g.isEmpty())
+						continue;
+					try {
+						imageTree.insert(g.getEnvelopeInternal(), new GeometryRef(g));
+					} catch (Exception e) {
+						throw new RuntimeException("Error wile inserting " + g, e);
+					}
 				}
 			} else {
 				for (var g : currentObject) {
+					if (g.isEmpty())
+						continue;
 					for (var refObj : imageTree.query(g.getEnvelopeInternal())) {
 						GeometryRef ref = (GeometryRef) refObj;
 						ref.geometry = ref.geometry.difference(g);

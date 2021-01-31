@@ -24,4 +24,18 @@ public class WarningCollector {
 	public void add(InputPosition pos, String message) {
 		warnings.add(new Waring(pos, message));
 	}
+
+	@Override
+	public String toString() {
+		if (warnings.isEmpty())
+			return "No Warnings";
+		StringBuilder sb = new StringBuilder();
+		for (var warning : warnings) {
+			sb.append(warning.pos);
+			sb.append(": ");
+			sb.append(warning.message);
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
 }

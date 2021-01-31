@@ -368,27 +368,44 @@ public class GerberReadGraphicsAdapter implements GerberParsingEventHandler {
 		state.updateApertureTransformation();
 	}
 
-	@Override
-	public void fileAttribute(InputPosition pos, String name, List<String> attributes) {
-		// TODO Auto-generated method stub
+	public Map<String, Attribute> attributes = new HashMap<>();
+
+	public enum AttributeAttachement {
+		FILE, APERTURE, OBJECT
+	}
+
+	public static class Attribute {
+		public String name;
+		public AttributeAttachement attachment;
+		public List<String> values;
+
+		public Attribute(String name, AttributeAttachement attachment, List<String> values) {
+			this.name = name;
+			this.attachment = attachment;
+			this.values = values;
+		}
 
 	}
 
 	@Override
-	public void objectAttribute(InputPosition pos, String name, List<String> attributes) {
-		// TODO Auto-generated method stub
+	public void fileAttribute(InputPosition pos, String name, List<String> values) {
+		attributes.put(name, new Attribute(name, AttributeAttachement.FILE, values));
+	}
+
+	@Override
+	public void apertureAttribute(InputPosition pos, String name, List<String> values) {
+		attributes.put(name, new Attribute(name, AttributeAttachement.APERTURE, values));
+	}
+
+	@Override
+	public void objectAttribute(InputPosition pos, String name, List<String> values) {
+		attributes.put(name, new Attribute(name, AttributeAttachement.OBJECT, values));
 
 	}
 
 	@Override
 	public void deleteAttribute(InputPosition pos, String name) {
-		// TODO Auto-generated method stub
-
+		attributes.remove(name);
 	}
 
-	@Override
-	public void apertureAttribute(InputPosition pos, String name, List<String> attributes) {
-		// TODO Auto-generated method stub
-
-	}
 }

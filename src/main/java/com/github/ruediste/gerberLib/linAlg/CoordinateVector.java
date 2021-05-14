@@ -20,7 +20,11 @@ public class CoordinateVector {
 	}
 
 	public double length() {
-		return Math.sqrt(x * x + y * y);
+		return Math.sqrt(length2());
+	}
+
+	public double length2() {
+		return x * x + y * y;
 	}
 
 	public CoordinateVector normalize() {

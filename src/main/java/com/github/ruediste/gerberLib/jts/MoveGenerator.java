@@ -31,6 +31,10 @@ public class MoveGenerator {
 
 	}
 
+	/**
+	 * Add the geometry to this generator for later processing in
+	 * {@link #generateMoves(Coordinate)}
+	 */
 	public void add(Geometry geometry) {
 		geometry.apply(new GeometryFilter() {
 
@@ -96,8 +100,6 @@ public class MoveGenerator {
 		Collections.shuffle(treeItems);
 		var tree = new STRtree();
 		treeItems.forEach(item -> tree.insert(new Envelope(item.p), item));
-
-		handler.moveTo(startingPoint);
 
 		Coordinate p = startingPoint;
 		while (!tree.isEmpty()) {

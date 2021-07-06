@@ -14,6 +14,8 @@ public abstract class Java2dRendererBase implements GerberReadGeometricPrimitive
 
 	private static final boolean print = false;
 
+	public double arcScale = 1;
+
 	public Java2dRendererBase() {
 	}
 
@@ -39,9 +41,8 @@ public abstract class Java2dRendererBase implements GerberReadGeometricPrimitive
 		if (print)
 			System.out.println(
 					pos + ": arc " + p + "(" + w + "," + h + ")[" + angSt + "," + angExt + "] " + transformation);
-		currentPath.append(
-				new Arc2D.Double(p.x, p.y, w, h, -angSt, -angExt, Arc2D.OPEN).getPathIterator(transformation.inner),
-				true);
+		currentPath.append(new Arc2D.Double(p.x + (1 - arcScale) * w * 0.5, p.y + (1 - arcScale) * h * 0.5,
+				w * arcScale, h * arcScale, -angSt, -angExt, Arc2D.OPEN).getPathIterator(transformation.inner), true);
 	}
 
 }
